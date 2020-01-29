@@ -1,11 +1,15 @@
+library(shiny)
+library(shinythemes)
+library(DT)
+
 ui <-fluidPage(style='padding:0%; margin:0%',
   list(
     tags$head(
       HTML('<link rel="icon" href="logo.png" 
                 type="image/png" />'))),
-  navbarPage(theme = shinytheme('cosmo'),
+  navbarPage(theme = shinythemes::shinytheme('cosmo'),
              title = div(img(src="logo.png",height=75,width=75),
-                 "MSstatsQC-ML",style="width:200%;
+                 "MSstatsQC",style="width:200%;
                                         font-size:30px;
                                         display:table-cell; 
                                         vertical-align:middle;"), 
@@ -70,25 +74,21 @@ ui <-fluidPage(style='padding:0%; margin:0%',
                                        p("Upload your data (Comma-separated (*.csv) QC file format)"),
                                        
                                        p("To see acceptable example data, look at", strong("Help"),"tab"),
-                                       #p("If your data contains min start time and max end time, the app will add a peak assymetry column automatically."),
-                                       
+
                                        fileInput("filein", "Upload file")
                                      ),
                                      
                                      wellPanel(
                                        p("If you want to run", strong("MSstatsQC"), "with example data file, click this button"),
                                        actionButton("sample_button", "Run with example data")
-                                       #bsTooltip("sample_button","If you want to run MSstatsQC with example data file, click this button", placement = "bottom", trigger = "hover",
-                                       #options = NULL)
+
                                      ),
                                      
                                      wellPanel(
                                        p("If you want to clean existing results, click this button"),
                                        
                                        actionButton("clear_button", "Clear data and plots")
-                                       
-                                       #bsTooltip("clear_button","click this button to clear your data and all the tables and plots from the system.", placement = "bottom", trigger = "hover",
-                                       #options = NULL)
+                                      
                                      ),
                                      
                                    ),

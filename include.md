@@ -1,6 +1,5 @@
 
-# MsStatsQC-ML
-## Longitudinal system suitability monitoring and quality control for targeted proteomic experiments
+## **Longitudinal system suitability monitoring & quality control for targeted proteomic experiments**
 Statistical process control (SPC) is a general and well-established method of quality control (QC) which can be used to monitor and improve the quality of a process such as LC MS/MS.     
 
 `MSstatsQC` is an open-source R package and Shiny web application for statistical analysis and monitoring of quality control and system suitability testing (SST) samples produced by spectrometry-based proteomic experiments. Our framework termed `MSstatsQC` is available through www.msstats.org/msstatsqc.     
