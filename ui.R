@@ -5,10 +5,13 @@ library(shinyBS)
 library(waiter)
 library(pushbar)
 library(tablerDash)
+library(shinyjs)
+library(shinyWidgets)
 
 ui <-fluidPage(
-  use_waiter(),
-  pushbar_deps(),
+  waiter::use_waiter(),
+  pushbar::pushbar_deps(),
+  shinyjs::useShinyjs(),
   style='padding:0%; margin:0%',
   list(
     tags$head(
@@ -23,12 +26,14 @@ ui <-fluidPage(
              windowTitle = "MSstatsQC",
              header=tags$head(
                tags$style(HTML('body {padding-top: 150px;}
-                                .navbar > .container-fluid {padding-left:5%;}
+                                .navbar > .container-fluid {padding-left:5%;
+                                    box-shadow: 0 6px 2px -2px rgba(0,0,0,.5);
+                                    background-color:#1d1d1f;}
                                 .navbar-nav > li > a, .navbar-brand {
                                   margin:0;
                                   align-items: center;
                                   display: flex;
-                                  height: 10vh;}
+                                  height: 12.5vh;}
                                 .navbar-default .navbar-nav > .active:after {
                                   position: absolute;
                                   bottom: 0;
@@ -37,7 +42,8 @@ ui <-fluidPage(
                                   content: " ";
                                   border-bottom: 5px solid #e4e4e4;}
                                 .navbar {min-height:25px !important;}
-                                .modal-body{ min-height:500px; align:center}'))
+                                .modal-body{min-height:70vh !important; align:center}
+                               .modal-lg { width: 60vw;}'))
              ),
              tabPanel(title= "About", icon = icon("bar-chart-o"), fluidPage(style = "width:80%; align:center",
                                                 includeMarkdown("include.md"))),
@@ -50,7 +56,7 @@ ui <-fluidPage(
                                     fileInput("file1", h3("Guide Set"),accept = c(".xlsx",
                                                                                   ".csv")),
                                     actionButton("show1", "Show Table"),
-                                    fileInput("file3", h3("Test Set")),
+                                    fileInput("file2", h3("Test Set")),
                                     fileInput("file3", h3("Annotated Set")),
                                     radioButtons("disp", "Display",
                                                  choices = c(Head = "head",
@@ -72,7 +78,7 @@ ui <-fluidPage(
                                 )
                       )
              ),
-             tabPanel("Data import and selection",
+             tabPanel(" Data import and selection",icon = icon("upload"),
                       fluidPage(style = "width:85%",
                                 sidebarLayout(
                                   sidebarPanel(
@@ -80,14 +86,13 @@ ui <-fluidPage(
                                       p("Upload your data (Comma-separated (*.csv) QC file format)"),
                                       
                                       p("To see acceptable example data, look at", strong("Help"),"tab"),
-                                      
-                                      fileInput("filein", "Upload file")
+                                      fileInput("filein", h3("Upload file"),accept = c(".xlsx", ".csv")),
+                                      shinyWidgets::circleButton("showUpload1", icon = icon("table"), status = "default", size = "default"),
                                     ),
                                     
                                     wellPanel(
                                       p("If you want to run", strong("MSstatsQC"), "with example data file, click this button"),
-                                      actionButton("sample_button", "Run with example data")
-                                      
+                                      actionButton("sample_button", "Run with example data"),
                                     ),
                                     
                                     wellPanel(
@@ -196,7 +201,53 @@ ui <-fluidPage(
               )
               
             )
-          )))
+          ))
+          ),
+          tabPanel("Metric summary",
+                   tabsetPanel(
+                     
+                     tabPanel("Descriptives : boxplots for metrics",
+                              tags$head(tags$style(type="text/css")),
+                              conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                                               tags$div("It may take a while to load the plots, please wait...",
+                                                        id="loadmessage")),
+                              plotlyOutput("box_plot", height = 2000)
+                     ),
+                     
+                     tabPanel("Overall performance : decision maps",
+                              tags$head(tags$style(type="text/css")),
+                              conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                                               tags$div("It may take a while to load the plots, please wait...",
+                                                        id="loadmessage")),
+                              sidebarLayout(
+                                sidebarPanel(
+                                  checkboxGroupInput("heatmap_controlChart_select", "Select your control chart",
+                                                     choices = c("CUSUM charts" = "CUSUM","XmR chart" = "XmR"), selected = "XmR")
+                                  #htmlOutput("heatmap_txt")
+                                ),
+                                mainPanel(plotOutput("heat_map")
+                                )
+                              )
+                     ),
+                     
+                     tabPanel("Detailed performance: plot summaries",
+                              tags$head(tags$style(type="text/css")),
+                              conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                                               tags$div("It may take a while to load the plots, please wait...",
+                                                        id="loadmessage")),
+                              sidebarLayout(
+                                sidebarPanel(
+                                  checkboxGroupInput("summary_controlChart_select", "Select your control chart",
+                                                     choices = c("CUSUM charts" = "CUSUM","XmR chart" = "XmR"), selected = "XmR")
+                                  #htmlOutput("summary_decision_txt")
+                                ),
+                                mainPanel(
+                                  plotOutput("plot_summary")
+                                )
+                              )
+                     )
+                   )
+          )
   ),
   fixedPanel(
     actionButton("open", icon("chevron-up")),

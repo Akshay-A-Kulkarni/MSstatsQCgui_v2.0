@@ -1,4 +1,8 @@
 library(plotly)
+source("plot-functions.R")
+source("data-validation.R")
+source("helper-functions.R")
+source("QCMetrics.R")
 
 loading_screen <- tagList(
   h3("Initializing MSstatsQC", style = "color:white;"),
@@ -10,18 +14,16 @@ loading_screen <- tagList(
 
 server <- function(input, output) {
   
-  # w <- Waiter$new(html = loading_screen, color='#242424')
-  # 
+  w <- Waiter$new(html = loading_screen, color='#242424')
+
   # w$show()
   # 
   # Sys.sleep(2)
   # 
-  # w$update(html = tagList(img(src = 'logo.png', height = "150px"),div(style='padding:14vh')
-  # 
-  # ))
+  # w$update(html = tagList(img(src = 'logo.png', height = "150px"),div(style='padding:14vh')))
   # 
   # Sys.sleep(1)
-  #   
+  # 
   # w$hide()
   
   setup_pushbar() # setup
@@ -34,44 +36,47 @@ server <- function(input, output) {
     pushbar_close()
   })  
   
-  output$table <- DT::renderDataTable(DT::datatable({
-    
-    req(input$file1)
-    data <- read.csv(input$file1$datapath)
-    if (input$disp == "head") {
-      data <- head(data)
-    }
-    data
-  }
-  ,fillContainer = T
-  ,options = list(lengthMenu = c(10, 50, 100), pageLength = 10, scroller = list(rowHeight = 100))
-  )
-  )
+  # output$table <- DT::renderDataTable(DT::datatable({
+  #   
+  #   req(input$file1)
+  #   data <- read.csv(input$file1$datapath)
+  #   if (input$disp == "head") {
+  #     data <- head(data)
+  #   }
+  #   data
+  # }
+  # ,fillContainer = T
+  # ,options = list(lengthMenu = c(10, 50, 100), pageLength = 10, scroller = list(rowHeight = 100))
+  # )
+  # )
   
-  observeEvent(input$show1, {
+  observeEvent(input$showUpload1, {
     showModal(modalDialog(
-      title = "Uploaded file",
+      title = "Uploaded Data",
       size = "l",
-      DT::dataTableOutput("table", height = "500px"),
+      DT::dataTableOutput("table",height = "70vh"),
       easyClose = TRUE
     ))
   })
   
-  ############################ MS-stats  ###########################
+  ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, metrics = NULL)
   
   observeEvent(input$filein, {
     file1 <- input$filein
-    data$df <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    # data$df <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    data$df <- (read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
     validate(
       need(!is.null(data$df), "Please upload your data"),
       need(is.data.frame(data$df), data$df)
     )
-    data$metrics <- c(find_custom_metrics(data$df))
+    # data$metrics <- c(find_custom_metrics(data$df))
   }, priority = 20)
   
   observeEvent(input$sample_button, {
-    data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+    # data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+    data$df <- (read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+    
     validate(
       need(!is.null(data$df), "Please upload your data"),
       need(is.data.frame(data$df), data$df)
@@ -79,11 +84,24 @@ server <- function(input, output) {
     
     data$metrics <- c(find_custom_metrics(data$df))
   }, priority = 20)
+  
+  
   
   observeEvent(input$clear_button, {
     data$df <- NULL
     data$metrics <- NULL
   }, priority = 20)
+  
+  
+  output$table <- DT::renderDataTable(DT::datatable({
+    req(data$df)
+    outputdata <- data$df
+  }
+  ,fillContainer = T
+  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25, scroller = list(rowHeight = 100))
+  )
+  )
+  
   ##### Precursor type selection #####################################################################################
   output$pepSelect <- renderUI({
     prodata <- data$df
