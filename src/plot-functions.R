@@ -1,6 +1,6 @@
-source("QCMetrics.R")
-source('ggradar.R')
-source('helper-functions.R')
+source('src/QCMetrics.R')
+source('src/ggradar.R')
+source('src/helper-functions.R')
 #################################################################################################################
 #INPUT : "prodata" is the data user uploads.
 #        "precursorSelection" is the precursor that user selects in Data Import tab. it can be either one precursor(peptide) or it can be "all peptides"

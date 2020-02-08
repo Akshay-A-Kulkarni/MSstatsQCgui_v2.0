@@ -28,8 +28,12 @@ library(RecordLinkage)
 
 
 # Sourcing all modules pages to the main routing app.
-source("module2-ui.R")
-source("module2-server.R")
+source("src/module1-ui.R")
+source("src/module1-server.R")
+source("src/module2-ui.R")
+source("src/module2-server.R")
+source("src/module3-ui.R")
+source("src/module3-server.R")
 
 
 
@@ -37,7 +41,7 @@ source("module2-server.R")
 home_page <- fluidPage( h1("Home Page"),
                         fluidRow(
                           column(4,wellPanel(includeMarkdown("www/mod1.md"))),
-                          column(4,wellPanel(includeMarkdown("www/mod2.md"))),
+                          column(4,wellPanel(includeMarkdown("www/mod2.md"),actionButton("switch_mod2", "Launch Longitudinal Tool"))),
                           column(4,wellPanel(includeMarkdown("www/mod3.md")))
                         )
 )
@@ -46,14 +50,16 @@ home_page <- fluidPage( h1("Home Page"),
 
 # Callbacks on the server side for the sample pages
 home_server <- function(input, output, session) {
-
+  observeEvent(input$switch_mod2, {
+    if (!is_page("module2")) {
+      change_page("module2")}
+    })
 }
 
-?ro
 # Create routing. We provide routing path, a UI as well as a server-side callback for each page.
 router <- make_router(
   route("home", home_page, home_server),
-  route("side", mod2_ui, mod2_server)
+  route("module2", mod2_ui, mod2_server)
 )
 
 # Create output for our router in main UI of Shiny app.

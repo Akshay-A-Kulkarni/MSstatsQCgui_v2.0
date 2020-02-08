@@ -1,7 +1,7 @@
-source("plot-functions.R")
-source("data-validation.R")
-source("helper-functions.R")
-source("QCMetrics.R")
+source("src/plot-functions.R")
+source("src/data-validation.R")
+source("src/helper-functions.R")
+source("src/QCMetrics.R")
 
 
 mod2_server <- function(input, output, session) {
