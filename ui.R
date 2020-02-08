@@ -1,3 +1,5 @@
+# if (!"package:MSstatsQCgui" %in% search())
+#   import_fs("MSstatsQCgui", incl = c("shiny","shinyBS","dplyr","plotly","RecordLinkage","ggExtra","gridExtra","grid"))
 library(shiny)
 library(shinythemes)
 library(DT)
@@ -7,78 +9,78 @@ library(pushbar)
 library(tablerDash)
 library(shinyjs)
 library(shinyWidgets)
+library(plotly)
 
-ui <-fluidPage(
+
+mod2_ui <-fluidPage(
   waiter::use_waiter(),
   pushbar::pushbar_deps(),
   shinyjs::useShinyjs(),
-  style='padding:0%; margin:0%',
-  list(
-    tags$head(
-      HTML('<link rel="icon" href="logo.png" 
-                type="image/png" />'))),
+  cicerone::use_cicerone(),
   navbarPage(theme = shinythemes::shinytheme('cosmo'),position = 'fixed-top',
-             title = div(img(src="logo.png",height=75,width=75),
+             title = div(id='Logo', img(src="www/logo.png",height=75,width=75),
                  "MSstatsQC",style="width:200%;
                                         font-size:30px;
                                         display:table-cell; 
                                         vertical-align:middle;"), 
              windowTitle = "MSstatsQC",
              header=tags$head(
-               tags$style(HTML('body {padding-top: 150px;}
-                                .navbar > .container-fluid {padding-left:5%;
+               tags$style(HTML('body {padding-top: 8%;}
+                                .navbar > .container-fluid {
+                                    padding-left:5%;
                                     box-shadow: 0 6px 2px -2px rgba(0,0,0,.5);
                                     background-color:#1d1d1f;}
                                 .navbar-nav > li > a, .navbar-brand {
+                                  font-size: 1.7rem;
                                   margin:0;
                                   align-items: center;
                                   display: flex;
-                                  height: 12.5vh;}
+                                  height: 10vh;
                                 .navbar-default .navbar-nav > .active:after {
                                   position: absolute;
                                   bottom: 0;
                                   left: 0;
                                   width: 100%;
                                   content: " ";
-                                  border-bottom: 5px solid #e4e4e4;}
+                                  border-bottom: 6px solid #e4e4e4;}
                                 .navbar {min-height:25px !important;}
                                 .modal-body{min-height:70vh !important; align:center}
                                .modal-lg { width: 60vw;}'))
              ),
-             tabPanel(title= "About", icon = icon("bar-chart-o"), fluidPage(style = "width:80%; align:center",
+             tabPanel(title= "About", icon = icon("bar-chart-o"), fluidPage(style = "width:80%; align:center;",
                                                 includeMarkdown("include.md"))),
-             tabPanel("Upload",
-                      fluidPage(style = "width:80%",
-                                sidebarLayout(
-                                  sidebarPanel(
-                                    h2("Upload Files"),
-                                    tags$hr(),
-                                    fileInput("file1", h3("Guide Set"),accept = c(".xlsx",
-                                                                                  ".csv")),
-                                    actionButton("show1", "Show Table"),
-                                    fileInput("file2", h3("Test Set")),
-                                    fileInput("file3", h3("Annotated Set")),
-                                    radioButtons("disp", "Display",
-                                                 choices = c(Head = "head",
-                                                             All = "all"),
-                                                 selected = "all")
-                                  ),
-                                  mainPanel(
-                                    h1("Upload Files Tab"),
-                                    p("MSstatsQC-ML is a new tool that makes allows users to employ ML techniques to tackle a variety of", 
-                                      strong("QC problems for Mass Spectrometry")),
-                                    br(),
-                                    p("For an introduction and live example",
-                                      a("Old app homepage.", 
-                                        href = "https://eralpdogu.shinyapps.io/msstatsqc/")),
-                                    br(),
-                                    h2("Features"),
-                                    
-                                  )
-                                )
-                      )
-             ),
-             tabPanel(" Data import and selection",icon = icon("upload"),
+             # tabPanel("Upload",
+             #          fluidPage(style = "width:80%",
+             #                    sidebarLayout(
+             #                      sidebarPanel(
+             #                        h2("Upload Files"),
+             #                        tags$hr(),
+             #                        fileInput("file1", h3("Guide Set"),accept = c(".xlsx",
+             #                                                                      ".csv")),
+             #                        actionButton("show1", "Show Table"),
+             #                        fileInput("file2", h3("Test Set")),
+             #                        fileInput("file3", h3("Annotated Set")),
+             #                        radioButtons("disp", "Display",
+             #                                     choices = c(Head = "head",
+             #                                                 All = "all"),
+             #                                     selected = "all")
+             #                      ),
+             #                      mainPanel(
+             #                        h1("Upload Files Tab"),
+             #                        p("MSstatsQC-ML is a new tool that makes allows users to employ ML techniques to tackle a variety of", 
+             #                          strong("QC problems for Mass Spectrometry")),
+             #                        br(),
+             #                        p("For an introduction and live example",
+             #                          a("Old app homepage.", 
+             #                            href = "https://eralpdogu.shinyapps.io/msstatsqc/")),
+             #                        br(),
+             #                        h2("Features"),
+             #                        
+             #                      )
+             #                    )
+             #          )
+             # ),
+             tabPanel("Data import and selection",icon = icon("upload"), id='upload_tab',
                       fluidPage(style = "width:85%",
                                 sidebarLayout(
                                   sidebarPanel(
@@ -144,13 +146,14 @@ ui <-fluidPage(
                                 
              )
           ),
-          tabPanel("Decision Rule", fluidPage(style="width:80%",                                   
+          tabPanel("Decision Rule", icon = icon("ruler-combined"),    
+          fluidPage(style="width:80%",                               
             div(
-            bsCollapse(id = "collapseExample", open = "Panel 1",
-                       bsCollapsePanel("Panel 1", "This is a panel with just text ",
-                                       "and has the default style. You can change the style in ",
-                                       "the sidebar.")
-            ),
+            # bsCollapse(id = "collapseExample", open = "Panel 1",
+            #            bsCollapsePanel("Panel 1", "This is a panel with just text ",
+            #                            "and has the default style. You can change the style in ",
+            #                            "the sidebar.")
+            # ),
             h4(strong("Create your decision rule:")),
             bsCollapsePanel(p(strong("RED FLAG"), style="color:black; background-color: red;",align = "center",style="font-size:125%;"),
                             div(
@@ -203,7 +206,7 @@ ui <-fluidPage(
             )
           ))
           ),
-          tabPanel("Metric summary",
+          tabPanel("Metric summary",icon = icon("chart-line"),
                    tabsetPanel(
                      
                      tabPanel("Descriptives : boxplots for metrics",
@@ -250,20 +253,20 @@ ui <-fluidPage(
           )
   ),
   fixedPanel(
-    actionButton("open", icon("chevron-up")),
+    actionButton("openModulesPane", icon("chevron-up")),
     right = 10,
     bottom = 10
   ),
-  pushbar(id='bottom',
-        fluidPage(
-          fluidRow(actionButton("bottom_close", "", icon = icon("times"), class = "btn-danger"), style="padding-bottom:1%;float:right;"))
-        ,fluidPage(
-          fluidRow(
-            column(4,wellPanel(includeMarkdown("mod1.md"))),
-            column(4,wellPanel(includeMarkdown("mod2.md"))),
-            column(4,wellPanel(includeMarkdown("mod3.md")))
-          )),
-        from = "bottom",
-        style = "height:50%; background-color:white; padding:1%;"
-  )
+  # pushbar(id='bottom',
+  #       fluidPage(
+  #         fluidRow(actionButton("bottom_close", "", icon = icon("times"), class = "btn-danger"), style="padding-bottom:1%;float:right;"))
+  #       ,fluidPage(
+  #         fluidRow(
+  #           column(4,wellPanel(includeMarkdown("mod1.md"))),
+  #           column(4,wellPanel(includeMarkdown("mod2.md"))),
+  #           column(4,wellPanel(includeMarkdown("mod3.md")))
+  #         )),
+  #       from = "bottom",
+  #       style = "height:50%; background-color:white; padding:1%;"
+  # )
 )

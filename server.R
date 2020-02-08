@@ -1,18 +1,20 @@
-library(plotly)
 source("plot-functions.R")
 source("data-validation.R")
 source("helper-functions.R")
 source("QCMetrics.R")
+source("GuideDriver.R")
 
-loading_screen <- tagList(
-  h3("Initializing MSstatsQC", style = "color:white;"),
-  br(),
-  spin_flower(),
-  div(style='padding:15vh')
+
+
+
+mod2_server <- function(input, output, session) {
+  
+  loading_screen <- tagList(
+    h3("Initializing MSstatsQC", style = "color:white;"),
+    br(),
+    spin_flower(),
+    div(style='padding:15vh')
   )
-
-
-server <- function(input, output) {
   
   w <- Waiter$new(html = loading_screen, color='#242424')
 
@@ -26,9 +28,12 @@ server <- function(input, output) {
   # 
   # w$hide()
   
-  setup_pushbar() # setup
+  # setup_pushbar() # setup
   
-  observeEvent(input$open, {
+  # guide$init()$start()
+  
+  
+  observeEvent(input$openModulesPane, {
     pushbar_open(id = "bottom")
   })
   
