@@ -13,13 +13,9 @@ library(plotly)
 
 
 mod2_ui <-fluidPage(
-  waiter::use_waiter(),
-  pushbar::pushbar_deps(),
-  shinyjs::useShinyjs(),
-  cicerone::use_cicerone(),
   navbarPage(theme = shinythemes::shinytheme('cosmo'),position = 'fixed-top',
-             title = div(id='Logo', img(src="www/logo.png",height=75,width=75),
-                 "MSstatsQC",style="width:200%;
+             title = div(id='Logo', div(img(src="logo.png", height=75, width=75),"MSstatsQC"),
+                                  style="width:200%;
                                         font-size:30px;
                                         display:table-cell; 
                                         vertical-align:middle;"), 
@@ -48,7 +44,7 @@ mod2_ui <-fluidPage(
                                .modal-lg { width: 60vw;}'))
              ),
              tabPanel(title= "About", icon = icon("bar-chart-o"), fluidPage(style = "width:80%; align:center;",
-                                                includeMarkdown("include.md"))),
+                                                includeMarkdown("www/include.md"))),
              # tabPanel("Upload",
              #          fluidPage(style = "width:80%",
              #                    sidebarLayout(
@@ -257,16 +253,4 @@ mod2_ui <-fluidPage(
     right = 10,
     bottom = 10
   ),
-  # pushbar(id='bottom',
-  #       fluidPage(
-  #         fluidRow(actionButton("bottom_close", "", icon = icon("times"), class = "btn-danger"), style="padding-bottom:1%;float:right;"))
-  #       ,fluidPage(
-  #         fluidRow(
-  #           column(4,wellPanel(includeMarkdown("mod1.md"))),
-  #           column(4,wellPanel(includeMarkdown("mod2.md"))),
-  #           column(4,wellPanel(includeMarkdown("mod3.md")))
-  #         )),
-  #       from = "bottom",
-  #       style = "height:50%; background-color:white; padding:1%;"
-  # )
 )

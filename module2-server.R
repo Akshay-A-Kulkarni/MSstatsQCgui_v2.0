@@ -2,32 +2,11 @@ source("plot-functions.R")
 source("data-validation.R")
 source("helper-functions.R")
 source("QCMetrics.R")
-source("GuideDriver.R")
-
-
 
 
 mod2_server <- function(input, output, session) {
   
-  loading_screen <- tagList(
-    h3("Initializing MSstatsQC", style = "color:white;"),
-    br(),
-    spin_flower(),
-    div(style='padding:15vh')
-  )
-  
-  w <- Waiter$new(html = loading_screen, color='#242424')
 
-  # w$show()
-  # 
-  # Sys.sleep(2)
-  # 
-  # w$update(html = tagList(img(src = 'logo.png', height = "150px"),div(style='padding:14vh')))
-  # 
-  # Sys.sleep(1)
-  # 
-  # w$hide()
-  
   # setup_pushbar() # setup
   
   # guide$init()$start()
@@ -69,8 +48,8 @@ mod2_server <- function(input, output, session) {
   
   observeEvent(input$filein, {
     file1 <- input$filein
-    # data$df <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
-    data$df <- (read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    data$df <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    # data$df <- (read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
     validate(
       need(!is.null(data$df), "Please upload your data"),
       need(is.data.frame(data$df), data$df)
@@ -79,8 +58,8 @@ mod2_server <- function(input, output, session) {
   }, priority = 20)
   
   observeEvent(input$sample_button, {
-    # data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
-    data$df <- (read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+    data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+    # data$df <- (read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
     
     validate(
       need(!is.null(data$df), "Please upload your data"),
