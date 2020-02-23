@@ -11,37 +11,22 @@ mod2_server <- function(input, output, session) {
   
   # guide$init()$start()
   
+  observeEvent(input$switch_home, {
+    if (!is_page("/")) {
+      change_page("/")
+      }
+    })
   
-  observeEvent(input$openModulesPane, {
-    pushbar_open(id = "bottom")
-  })
+  addTooltip(session, id = "filein", title = "This is an input.",
+             placement = "left", trigger = "hover")
+  
+  addTooltip(session, id = "showUpload", title = "This is an input.",
+             placement = "left", trigger = "hover")
   
   observeEvent(input$bottom_close, {
     pushbar_close()
   })  
   
-  # output$table <- DT::renderDataTable(DT::datatable({
-  #   
-  #   req(input$file1)
-  #   data <- read.csv(input$file1$datapath)
-  #   if (input$disp == "head") {
-  #     data <- head(data)
-  #   }
-  #   data
-  # }
-  # ,fillContainer = T
-  # ,options = list(lengthMenu = c(10, 50, 100), pageLength = 10, scroller = list(rowHeight = 100))
-  # )
-  # )
-  
-  observeEvent(input$showUpload1, {
-    showModal(modalDialog(
-      title = "Uploaded Data",
-      size = "l",
-      DT::dataTableOutput("table",height = "70vh"),
-      easyClose = TRUE
-    ))
-  })
   
   ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, metrics = NULL)
@@ -59,8 +44,6 @@ mod2_server <- function(input, output, session) {
   
   observeEvent(input$sample_button, {
     data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
-    # data$df <- (read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
-    
     validate(
       need(!is.null(data$df), "Please upload your data"),
       need(is.data.frame(data$df), data$df)
@@ -90,7 +73,7 @@ mod2_server <- function(input, output, session) {
   output$pepSelect <- renderUI({
     prodata <- data$df
     validate(
-      need(!is.null(prodata), "Please upload your data.\n\n If your data contains min start time and max end time columns,the App will add a peak assymetry column automatically.\n\n Your data should contain a column named Annotation. Put all your metrics after this column.To see an example of a sample data click on the {Run with example data} button."),
+      need(!is.null(prodata), "Please upload your data.\n\n If your data contains min start time and max end time columns, the App will add a peak assymetry column automatically.\n\n Your data should contain a column named Annotation. Put all your metrics after this column.To see an example of a sample data click on the {Run with example data} button."),
       need(is.data.frame(prodata), prodata)
     )
     selectInput("pepSelection","Choose peptide"
@@ -98,14 +81,35 @@ mod2_server <- function(input, output, session) {
     )
   })
   ######Show table of data #####################################################################################################
-  output$prodata_table <- renderDataTable({
-    validate(
-      need(!is.null(data$df), "Please upload your data.\n\n If your data contains min start time and max end time columns, the App will add a peak assymetry column automatically.\n\n Your data should contain a column named Annotation. Put all your metrics after this column.To see an example of a sample data click on the {Run with example data} button."),
-      need(is.data.frame(data$df), data$df)
-    )
-    data$df
-  }, options = list(pageLength = 25))
-  ###### selection tab in Data Improt and selection #####################################################
+
+  observeEvent(input$showUpload, {
+    showModal(modalDialog(
+      title = "Uploaded Data",
+      size = "l",
+      easyClose = TRUE,
+      if(is.null(data$df)){p("Please upload your data or click [run with example data] to view the data here!")}
+      else{DT::dataTableOutput("table",height = "70vh")}
+    ))
+  })
+  
+  ###### selection tab in Data Import and selection #####################################################
+  check_mark_green <- HTML('<span class="glyphicon glyphicon glyphicon-ok-sign" style="font-size:3rem;color:green;"></span>')
+  check_mark <- HTML('<span class="glyphicon glyphicon glyphicon-ok-circle" style="font-size:3rem;"></span>')
+  
+  output$upload_mark <- renderUI({
+    uploaded <- !is.null(data$df)
+    if(uploaded){ check_mark_green }
+    else{ check_mark }
+  })
+  output$metric_mark <- renderUI({
+    if(length(input$user_selected_metrics)>=1){ check_mark_green }
+    else{ check_mark }
+  })
+
+  output$threshold_mark <- renderUI({
+    if(length(input$user_selected_metrics)>=1){ check_mark_green }
+    else{ check_mark }
+  })  
   output$selectMeanSD <- renderUI({
     lapply(input$user_selected_metrics,
            function(x){
@@ -135,7 +139,21 @@ mod2_server <- function(input, output, session) {
     
   })
   ###### Tab for selecting decision rule and metrics ###############################################
-  output$metricThresholdRed <- renderUI({
+  
+  output$metricSelection1 <- renderUI({
+    pickerInput(
+      inputId = "user_selected_metrics", 
+      label = "Select one, multiple or all metrics", 
+      choices = c(data$metrics), 
+      options = list(
+        `actions-box` = TRUE,
+        style="background-color:grey; color:black"
+      ), 
+      multiple = TRUE
+    )
+  })
+  
+   output$metricThresholdRed <- renderUI({
     numOfMetrics <- length(input$user_selected_metrics)
     numericInput('threshold_metric_red', '', value = 2, min = 0, max = numOfMetrics, step = 1)
   })
@@ -156,11 +174,7 @@ mod2_server <- function(input, output, session) {
     numericInput('threshold_metric_yellow', '', value = threshold_metric_red , min = 0, max = threshold_metric_red, step = 1)
   })
   
-  output$metricSelection <- renderUI({
-    checkboxGroupInput("user_selected_metrics","",
-                       choices = c(data$metrics),
-                       inline = TRUE)
-  })
+
   
   ################################################################# plots ###################################################
   #################################################################################################################
@@ -274,7 +288,7 @@ mod2_server <- function(input, output, session) {
     }else if(l == 3) {
       my_width = 1200
     }
-    my_width <- 1500
+    my_width <- 1400
     
   })
   
@@ -299,8 +313,38 @@ mod2_server <- function(input, output, session) {
       need(is.data.frame(prodata), prodata),
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
-    metrics_box.plot(prodata, data.metrics = input$user_selected_metrics)
+    metrics_box.plot(prodata, data.metrics = input$user_selected_metrics) %>% layout(width = JS('0.9*window.innerWidth'))
   })
+  
+
+  
+  output$box_plotly <- renderUI({
+    prodata <- data$df
+    validate(
+      need(!is.null(prodata), "Please upload your data"),
+      need(is.data.frame(prodata), prodata),
+      need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
+    )
+    plotly_box_plots <- metrics_box.plot(prodata, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    get_plot_output_list <- function(input_n) {
+      # Insert plot output objects the list
+      plot_output_list <- lapply(1:input_n, function(i) {
+        plotname <- paste("boxplot", i, sep="")
+        plot_output_object <- plotlyOutput(plotname)
+        plot_output_object <- wellPanel(h3(strong(input$user_selected_metrics[[i]])),br(),
+          renderPlotly({ plotly_box_plots[[i]]}))
+      })
+
+      do.call(tagList, plot_output_list) # needed to display properly.
+
+      return(plot_output_list)
+    }
+
+    get_plot_output_list(length(plotly_box_plots))
+    
+    })
+  
+  
   
   ###############   summary plots and radar plots ############################################################################
   output$plot_summary <- renderPlot({
@@ -356,6 +400,8 @@ mod2_server <- function(input, output, session) {
     
     peptideThresholdRed <- (as.numeric(input$threshold_peptide_red))/100
     peptideThresholdYellow <- (as.numeric(input$threshold_peptide_yellow))/100
+
+
     if(is.null(prodata$AcquiredTime)) return(NULL)
     
     is_guidset_selected <- FALSE

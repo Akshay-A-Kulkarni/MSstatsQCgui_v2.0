@@ -351,7 +351,7 @@ CUSUM.Radar.Plot <- function(prodata, data.metrics, L,U,listMean,listSD,guidset_
 }
 
 #########################################################################################################################
-metrics_box.plot <- function(prodata, data.metrics) {
+metrics_box.plot <- function(prodata, data.metrics, ret_obj_list = F) {
   plots <- list()
   for(i in seq_len(length(data.metrics))) {
     metric <- data.metrics[i]
@@ -364,10 +364,15 @@ metrics_box.plot <- function(prodata, data.metrics) {
         ),showlegend = FALSE)
       #layout(yaxis = list(title = metric),showlegend = FALSE)
   }
-  height <- (length(data.metrics))*300
-  p <- do.call(subplot,c(plots,nrows=length(plots))) %>%
-    layout(autosize = F, width = 1000, height = height)
-  return(p)
+  
+  if (ret_obj_list == F){
+    height <- (length(data.metrics))*300
+    p <- do.call(subplot,c(plots,nrows= floor(length(plots)/2))) %>%
+      layout(autosize = TRUE, height = height,margin = unit(c(3, 1, 1, 1), "lines"))
+    return(p)}
+  else{
+    return(plots)
+  }
 }
 #####################################################################################################
 metrics_heat.map <- function(prodata,data.metrics, method,peptideThresholdRed,peptideThresholdYellow,

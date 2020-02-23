@@ -1,0 +1,33 @@
+/* Base */
+
+@font-face {  
+  src: url("https://fonts.googleapis.com/css?family=Nunito+Sans:300,400,700");
+  font-family: "Nunito Sans";
+}
+
+body {
+  line-height: 1.7;
+  color: black;
+  font-weight: 400;
+  font-size: 1rem;
+  font-family: "Nunito Sans"}
+
+::-moz-selection {
+  background: #000;
+  color: #fff; }
+
+::selection {
+  background: #000;
+  color: #fff; }
+
+a {
+  -webkit-transition: .3s all ease;
+  -o-transition: .3s all ease;
+  transition: .3s all ease; }
+  a:hover {
+    text-decoration: none; }
+
+h1, h2, h3, h4, h5,
+.h1, .h2, .h3, .h4, .h5 .p {
+  font-family: "Nunito Sans"}
+
