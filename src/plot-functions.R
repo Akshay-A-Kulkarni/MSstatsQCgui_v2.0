@@ -374,6 +374,34 @@ metrics_box.plot <- function(prodata, data.metrics, ret_obj_list = F) {
     return(plots)
   }
 }
+
+peptide_box.plot <- function(prodata, data.peptides, data.metrics, ret_obj_list = F) {
+  plots <- list()
+  for(i in seq_len(length(data.peptides))) {
+    peptide <- data.peptides[i]
+    
+    data <- prodata %>% filter(Precursor == peptide) 
+    
+    data <-  data %>% mutate_at(data.metrics, ~(scale(., center = T) %>% as.vector)) 
+    
+    data <-  data %>% select(Precursor,data.metrics) %>% pivot_longer(-Precursor, names_to = "Metric", values_to = "Value") 
+    
+    plots[[i]] <- plot_ly(data, x = ~Metric, y = ~Value, color = ~Metric, type = "box") %>%
+      layout(
+        annotations = list(
+          list(x = 0.5 , y = 1, text = peptide, showarrow = F, xref='paper', yref='paper')
+        ),showlegend = FALSE)
+  }
+  
+  if (ret_obj_list == F){
+    height <- (length(data.peptides))*300
+    p <- do.call(subplot,c(plots,nrows= floor(length(plots)/2))) %>%
+      layout(autosize = TRUE, height = height,margin = unit(c(3, 1, 1, 1), "lines"))
+    return(p)}
+  else{
+    return(plots)
+  }
+}
 #####################################################################################################
 metrics_heat.map <- function(prodata,data.metrics, method,peptideThresholdRed,peptideThresholdYellow,
                              L, U, type, title,listMean, listSD, guidset_selected) {

@@ -20,6 +20,8 @@ library(gridExtra)
 library(grid)
 library(fresh)
 library(tippy)
+library(tidyr)
+
 
 
 if (!"package:MSstatsQCgui" %in% search())
@@ -111,17 +113,18 @@ home_page <- fluidPage(style="padding:0%; margin:0%",
                                            )),
                        # Main Body
                fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;",
+
                        fluidRow(column(7,div(style="padding-top:15%;", h1(strong('MSstatsQC'), align="right", style='font-size:5rem;'),h4('Longitudinal system suitability monitoring and quality control for proteomic experiments',align="right"))),
                                 column(5, align='center',img(src='heat2.png', width="400vh"))
                                 ),
-                       fluidRow(br(),br(),br(),br(),
-                         column(12,includeMarkdown("www/include.md"))),
+                       fluidRow( br(),br(),br(),br(),
+                         fluidRow(
+                           column(4,wellPanel(style=cardCSS, mod1p,br(),br())),
+                           column(4,wellPanel(style=cardCSS, mod2p,br(),br())),
+                           column(4,wellPanel(style=cardCSS, mod3p)),                        
+                         ),
+                         column(10,offset=1, h3("About"),includeMarkdown("www/include.md"))),
                        br(),br(),
-                       fluidRow(
-                         column(4,wellPanel(style=cardCSS, mod1p)),
-                         column(4,wellPanel(style=cardCSS, mod2p)),
-                         column(4,wellPanel(style=cardCSS, mod3p)),                        
-                       )
 )
 )
 

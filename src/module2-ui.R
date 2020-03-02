@@ -61,14 +61,18 @@ mod2_ui <-  fluidPage(
                       fluidPage(style = "width:95%",
                             fluidRow(
                                     column(3,
-                                           fluidRow(column(5,hr_line),column(2,style="padding: 0%",align="center","Upload",br(),uiOutput("upload_mark")),column(5,hr_line)),
+                                           fluidRow(column(5,hr_line),column(2,style="padding: 0%",align="center",strong("1.Upload"),br(),uiOutput("upload_mark")),column(5,hr_line)),
                                            p(strong("Upload File")),                               
                                           wellPanel(
                                             p("Upload your data (Comma-separated (*.csv) QC file format)"),
                                             p("To see acceptable example data, look at", strong("Help"),"tab"),
-                                            tipify(fileInput("filein", label= p(strong("Guide Data")), accept = c(".xlsx", ".csv")),"TEST"),
-                                            fileInput("testin", label= p(strong("Test Data")), accept = c(".xlsx", ".csv")),
-                                            tipify(actionButton("showUpload", "", icon = icon("fullscreen", lib = "glyphicon")),"TEST"),                                          ),
+                                            fluidRow(column(9,fileInput("filein", label= p(strong("Guide Data")), accept = c(".xlsx", ".csv"))),
+                                                     column(3,style = "padding-top: 10%", tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset"))
+                                                     ),
+                                            fluidRow(column(9,fileInput("testin", label= p(strong("Test Data")), accept = c(".xlsx", ".csv"))),
+                                                     column(3,style = "padding-top: 10%",tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset"))
+                                            ),
+                                            ),
                                           
                                           wellPanel(
                                             p("If you want to run", strong("MSstatsQC"), "with example data file, click this button"),
@@ -82,7 +86,7 @@ mod2_ui <-  fluidPage(
                                             
                                           )),
                                     column(5,
-                                           fluidRow(column(5,hr_line),column(2,style="padding: 0%", align="center","Metrics",br(),uiOutput("metric_mark")),column(5,hr_line)),
+                                           fluidRow(column(5,hr_line),column(2,style="padding: 0%", align="center",strong("2.Metrics"),br(),uiOutput("metric_mark")),column(5,hr_line)),
                                            p(strong("Select metrics for all further analysis:")),
                                                             wellPanel(
                                                               fluidRow(
@@ -99,26 +103,24 @@ mod2_ui <-  fluidPage(
                                                                            
                                                                            "If you want to select mean and standard deviation yourself select them here. Otherwise choose the guide set button.",
                                                                            #"define mean and standard deviation",
-                                                                           choices = c("Mean and standard deviation estimated by the user","Mean and standard deviation estimated from guide set")
+                                                                           choices = c("Mean and standard deviation estimated from guide set","Mean and standard deviation estimated by the user")
                                                               ),
                                                               conditionalPanel(
                                                                 condition = "input.selectGuideSetOrMeanSD == 'Mean and standard deviation estimated by the user'",
-                                                                p("Select the mean and standard deviation"),
+                                                                p(strong("Using Below values for mean and standard deviation")),
                                                                 uiOutput("selectMeanSD")
                                                               ),
                                                               conditionalPanel(
                                                                 condition = "input.selectGuideSetOrMeanSD == 'Mean and standard deviation estimated from guide set'",
-                                                                p("Select a guide set to estimate control limits"),
-                                                                
-                                                                uiOutput("selectGuideSet")
-                                                              )
+                                                                p(strong("Using the guide set to estimate control limits")),
+                                                                )
                                                             ),
                                                             wellPanel(
                                                               p("Select a precursor or select all"),
                                                               uiOutput("pepSelect")
                                                             )),
                                   column(4,
-                                         fluidRow(column(5,hr_line),column(2, style="padding: 0%", align="center","Threshold",br(),uiOutput("threshold_mark")),column(5,hr_line)),
+                                         fluidRow(column(5,hr_line),column(2, style="padding: 0%", align="center",strong("3.Thresholds"),br(),uiOutput("threshold_mark")),column(5 ,hr_line)),
                                       p(strong("Create Your Decision Rules")),
                                       wellPanel(
                                       div(p(strong("RED FLAG"), style="color:black; background-color: red;",align = "center",style="font-size:125%;"), 
@@ -160,18 +162,17 @@ mod2_ui <-  fluidPage(
                               conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                                                tags$div("It may take a while to load the plots, please wait...",
                                                         id="loadmessage")),
-                              # fluidPage(plotlyOutput("box_plotly"))
                               fluidPage(
                                 awesomeRadio(
                                   inputId = "box_plot_switch",
                                   label = "Layout", 
-                                  choices = c("FullPanel", "Grid"),
-                                  selected = "FullPanel",
+                                  choices = c("Per-Peptide", "Per-Metric"),
+                                  selected = "Per-Peptide",
                                   inline = TRUE, 
                                   status = "success"
                                 ),
-                              conditionalPanel(condition = 'input.box_plot_switch=="FullPanel"',uiOutput("box_plotly")),
-                              conditionalPanel(condition = 'input.box_plot_switch=="Grid"',plotlyOutput("box_plot")),
+                              conditionalPanel(condition = 'input.box_plot_switch=="Per-Peptide"',uiOutput("box_plotly")),
+                              conditionalPanel(condition = 'input.box_plot_switch=="Per-Metric"',(plotlyOutput("box_plot"))),
                               )
                               
                      ),

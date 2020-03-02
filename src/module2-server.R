@@ -17,42 +17,75 @@ mod2_server <- function(input, output, session) {
       }
     })
   
-  addTooltip(session, id = "filein", title = "This is an input.",
-             placement = "left", trigger = "hover")
-  
-  addTooltip(session, id = "showUpload", title = "This is an input.",
-             placement = "left", trigger = "hover")
-  
   observeEvent(input$bottom_close, {
     pushbar_close()
   })  
   
   
   ############################ MSstatsQCgui  ###########################
-  data <- reactiveValues(df = NULL, metrics = NULL)
+  data <- reactiveValues(df = NULL, guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
   
   observeEvent(input$filein, {
     file1 <- input$filein
-    data$df <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
-    # data$df <- (read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    data$guide <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
     validate(
-      need(!is.null(data$df), "Please upload your data"),
-      need(is.data.frame(data$df), data$df)
+      need(!is.null(data$guide), "Please upload your data"),
+      need(is.data.frame(data$guide), data$guide)
     )
     # data$metrics <- c(find_custom_metrics(data$df))
   }, priority = 20)
   
-  observeEvent(input$sample_button, {
-    data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+
+  
+  observeEvent(input$testin, {
+    file2 <- input$testin
+    data$test <- input_checking(read.csv(file=file2$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
     validate(
-      need(!is.null(data$df), "Please upload your data"),
-      need(is.data.frame(data$df), data$df)
+      need(!is.null(data$test), "Please upload your data"),
+      need(is.data.frame(data$test), data$test)
     )
     
+    guideset <- data$guide
+    testset <- data$test
+    df1 <- rbind(guideset,testset)
+    
+    data$df <- input_checking(df1)
     data$metrics <- c(find_custom_metrics(data$df))
   }, priority = 20)
   
   
+  # observeEvent(input$sample_button, {
+  #   data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
+  #   # data$test <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_TEST.csv"))
+  # 
+  #   validate(
+  #     need(!is.null(data$df), "Please upload your data"),
+  #     need(is.data.frame(data$df), data$df)
+  #   )
+  # 
+  #   data$metrics <- c(find_custom_metrics(data$df))
+  # }, priority = 20)
+  
+  observeEvent(input$sample_button, {
+    data$guide <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_GUIDE.csv", stringsAsFactors = T))
+    data$test <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_TEST.csv", stringsAsFactors = T))
+    
+    guideset <- data$guide
+    testset <- data$test
+    df1 <- rbind(guideset,testset)
+
+    data$df <- input_checking(df1)
+
+    validate(
+      need(!is.null(data$df), "Please upload your data"),
+      need(is.data.frame(data$df), data$df)
+    )
+
+    data$metrics <- c(find_custom_metrics(data$df))
+  }, priority = 20
+
+  )
+
   
   observeEvent(input$clear_button, {
     data$df <- NULL
@@ -60,9 +93,18 @@ mod2_server <- function(input, output, session) {
   }, priority = 20)
   
   
-  output$table <- DT::renderDataTable(DT::datatable({
-    req(data$df)
-    outputdata <- data$df
+  output$guideview <- DT::renderDataTable(DT::datatable({
+    req(data$guide)
+    outputdata <- data$guide
+  }
+  ,fillContainer = T
+  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25, scroller = list(rowHeight = 100))
+  )
+  )
+
+  output$testview <- DT::renderDataTable(DT::datatable({
+    req(data$test)
+    outputdata <- data$test
   }
   ,fillContainer = T
   ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25, scroller = list(rowHeight = 100))
@@ -77,18 +119,28 @@ mod2_server <- function(input, output, session) {
       need(is.data.frame(prodata), prodata)
     )
     selectInput("pepSelection","Choose peptide"
-                ,choices = c(levels(prodata$Precursor),"all peptides")
+                ,choices = c(levels(prodata$Precursor),"all peptides"), selected = "all peptides"
     )
   })
   ######Show table of data #####################################################################################################
 
-  observeEvent(input$showUpload, {
+  observeEvent(input$showguide, {
     showModal(modalDialog(
       title = "Uploaded Data",
       size = "l",
       easyClose = TRUE,
-      if(is.null(data$df)){p("Please upload your data or click [run with example data] to view the data here!")}
-      else{DT::dataTableOutput("table",height = "70vh")}
+      if(is.null(data$guide)){p("Please upload your data or click [run with example data] to view the data here!")}
+      else{DT::dataTableOutput("guideview",height = "70vh")}
+    ))
+  })
+  
+  observeEvent(input$showtest, {
+    showModal(modalDialog(
+      title = "Uploaded Data",
+      size = "l",
+      easyClose = TRUE,
+      if(is.null(data$test)){p("Please upload your data or click [run with example data] to view the data here!")}
+      else{DT::dataTableOutput("testview",height = "70vh")}
     ))
   })
   
@@ -98,7 +150,16 @@ mod2_server <- function(input, output, session) {
   
   output$upload_mark <- renderUI({
     uploaded <- !is.null(data$df)
-    if(uploaded){ check_mark_green }
+    
+    if(uploaded){ 
+      # Given all checks pass set guide bounds  ( IMP - The nuber of observations of each peptide in the guideset MUST be equal.)
+      # guideset <- data$guide
+      data$L <- 1
+      data$U <- nrow(data$guide)/length(levels(data$guide$Precursor))
+      
+      # Give Green-Light
+      check_mark_green 
+      }
     else{ check_mark }
   })
   output$metric_mark <- renderUI({
@@ -125,19 +186,22 @@ mod2_server <- function(input, output, session) {
            })
   })
   
+  # output$selectGuideSet <- renderUI({
+  #   guideset <- data$guide
+  #   print(nrow(guideset))
+  #   
+  #   fluidRow(
+  #     column(6,
+  #            numericInput("L","Lower bound of guide set",value = 1)
+  #     ),
+  #     column(6,
+  #            numericInput("U","Upper bound of guide set", value = nrow(guideset))
+  #     )
+  #   )
+
+
+  # })
   
-  output$selectGuideSet <- renderUI({
-    fluidRow(
-      column(6,
-             numericInput("L","Lower bound of guide set",value = 1, min = 1, step = 1)
-      ),
-      column(6,
-             numericInput("U","Upper bound of guide set", value = 5, min = 2, step = 1)
-      )
-    )
-    
-    
-  })
   ###### Tab for selecting decision rule and metrics ###############################################
   
   output$metricSelection1 <- renderUI({
@@ -196,8 +260,8 @@ mod2_server <- function(input, output, session) {
                               conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                                                tags$div("It may take a while to load the plots, please wait...",
                                                         id="loadmessage")),
-                              renderPlotly(render.QC.chart(data$df, input$pepSelection, input$L,
-                                                           input$U, metric = x,
+                              renderPlotly(render.QC.chart(data$df, input$pepSelection, data$L,
+                                                           data$U, metric = x,
                                                            plot.method = "XmR", normalization = FALSE,
                                                            y.title1 = "Individual Value", y.title2 = "Moving Range",
                                                            selectMean = input[[paste0("selectMean@",x)]],selectSD = input[[paste0("selectSD@",x)]],
@@ -229,7 +293,7 @@ mod2_server <- function(input, output, session) {
                               conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                                                tags$div("It may take a while to load the plots, please wait...",
                                                         id="loadmessage")),
-                              renderPlotly(render.QC.chart(data$df, input$pepSelection, input$L, input$U, metric = x, plot.method = "CUSUM", normalization = TRUE, y.title1 = "CUSUM mean", y.title2 = "CUSUM variation",selectMean = input[[paste0("selectMean@",x)]],selectSD = input[[paste0("selectSD@",x)]],guidset_selected = is_guidset_selected))
+                              renderPlotly(render.QC.chart(data$df, input$pepSelection, data$L, data$U, metric = x, plot.method = "CUSUM", normalization = TRUE, y.title1 = "CUSUM mean", y.title2 = "CUSUM variation",selectMean = input[[paste0("selectMean@",x)]],selectSD = input[[paste0("selectSD@",x)]],guidset_selected = is_guidset_selected))
                      )
                    })
     
@@ -254,7 +318,7 @@ mod2_server <- function(input, output, session) {
                               conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                                                tags$div("It may take a while to load the plots, please wait...",
                                                         id="loadmessage")),
-                              renderPlotly(render.QC.chart(data$df, input$pepSelection, input$L, input$U, metric = x, plot.method = "CP", normalization = TRUE, y.title1 = "Change point for mean", y.title2 = "Change point for variation",selectMean = input[[paste0("selectMean@",x)]],selectSD = input[[paste0("selectSD@",x)]],guidset_selected = is_guidset_selected))
+                              renderPlotly(render.QC.chart(data$df, input$pepSelection, data$L, data$U, metric = x, plot.method = "CP", normalization = TRUE, y.title1 = "Change point for mean", y.title2 = "Change point for variation",selectMean = input[[paste0("selectMean@",x)]],selectSD = input[[paste0("selectSD@",x)]],guidset_selected = is_guidset_selected))
                      )
                    })
     
@@ -313,26 +377,35 @@ mod2_server <- function(input, output, session) {
       need(is.data.frame(prodata), prodata),
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
-    metrics_box.plot(prodata, data.metrics = input$user_selected_metrics) %>% layout(width = JS('0.9*window.innerWidth'))
+    # metrics_box.plot(prodata, data.metrics = input$user_selected_metrics) %>% layout(width = JS('0.9*window.innerWidth'))
   })
   
 
   
   output$box_plotly <- renderUI({
-    prodata <- data$df
+    guideset <- data$guide
+    testset <- data$test
     validate(
-      need(!is.null(prodata), "Please upload your data"),
-      need(is.data.frame(prodata), prodata),
+      need(!is.null(guideset), "Please upload your data"),
+      need(is.data.frame(guideset), guideset),
+      need(!is.null(testset), "Please upload your data"),
+      need(is.data.frame(testset), testset),
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
-    plotly_box_plots <- metrics_box.plot(prodata, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    # guide_box_plots <- metrics_box.plot(guideset, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    # test_box_plots <- metrics_box.plot(testset, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    
+    guide_box_plots <- peptide_box.plot(guideset, data.peptides = c(levels(guideset$Precursor)), data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    test_box_plots <-  peptide_box.plot(testset, data.peptides = c(levels(testset$Precursor)), data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    
     get_plot_output_list <- function(input_n) {
       # Insert plot output objects the list
       plot_output_list <- lapply(1:input_n, function(i) {
         plotname <- paste("boxplot", i, sep="")
         plot_output_object <- plotlyOutput(plotname)
-        plot_output_object <- wellPanel(h3(strong(input$user_selected_metrics[[i]])),br(),
-          renderPlotly({ plotly_box_plots[[i]]}))
+        plot_output_object <- wellPanel(h3(strong(levels(testset$Precursor)[[i]])),br(),
+                                      fluidRow(column(6,h4("Guide Set"),renderPlotly({ guide_box_plots[[i]]})),column(6,h4("Test Set"),renderPlotly({ test_box_plots[[i]]})))  
+                                      )
       })
 
       do.call(tagList, plot_output_list) # needed to display properly.
@@ -340,7 +413,7 @@ mod2_server <- function(input, output, session) {
       return(plot_output_list)
     }
 
-    get_plot_output_list(length(plotly_box_plots))
+    get_plot_output_list(length(guide_box_plots))
     
     })
   
@@ -373,11 +446,11 @@ mod2_server <- function(input, output, session) {
       p1 <- NULL
       p2 <- NULL
       if(method == "XmR") {
-        p1 <- XmR.Summary.plot(prodata, data.metrics = input$user_selected_metrics, input$L, input$U, listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
-        p2 <- XmR.Radar.Plot(prodata, data.metrics = input$user_selected_metrics,input$L,input$U,listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
+        p1 <- XmR.Summary.plot(prodata, data.metrics = input$user_selected_metrics, data$L, data$U, listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
+        p2 <- XmR.Radar.Plot(prodata, data.metrics = input$user_selected_metrics,data$L,data$U,listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
       } else if(method == "CUSUM") {
-        p1 <- CUSUM.Summary.plot(prodata, data.metrics = input$user_selected_metrics, input$L, input$U,listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
-        p2 <- CUSUM.Radar.Plot(prodata, data.metrics = input$user_selected_metrics, input$L,input$U,listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
+        p1 <- CUSUM.Summary.plot(prodata, data.metrics = input$user_selected_metrics, data$L, data$U,listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
+        p2 <- CUSUM.Radar.Plot(prodata, data.metrics = input$user_selected_metrics, data$L,data$U,listMean = listMean,listSD = listSD, guidset_selected = is_guidset_selected)
       }
       plots[[i]]   <- p1
       plots[[i+1]] <- p2
@@ -421,12 +494,12 @@ mod2_server <- function(input, output, session) {
     for(method in input$heatmap_controlChart_select) {
       p1 <- metrics_heat.map(prodata,
                              data.metrics = input$user_selected_metrics, method = method,
-                             peptideThresholdRed, peptideThresholdYellow,input$L, input$U, type = 1,
+                             peptideThresholdRed, peptideThresholdYellow,data$L, data$U, type = 1,
                              title = "Decision-map : mean",
                              listMean = listMean, listSD = listSD, guidset_selected = is_guidset_selected)
       p2 <- metrics_heat.map(prodata,
                              data.metrics = input$user_selected_metrics, method = method,
-                             peptideThresholdRed, peptideThresholdYellow,input$L, input$U, type = 2,
+                             peptideThresholdRed, peptideThresholdYellow,data$L, data$U, type = 2,
                              title = "Decision-map : variability",
                              listMean = listMean, listSD = listSD, guidset_selected = is_guidset_selected)
       plots[[i]]   <- p1
