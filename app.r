@@ -92,7 +92,7 @@ home_page <- fluidPage(style="padding:0%; margin:0%",
                                         background-color:#FFF;
                                         z-index:1000;" ,
                                  fluidPage(style="width:80%;font-family:Open Sans;",
-                                           column(6,div(style="padding-top:1.5%; display:flex",img(src="logo.png", width="90vh"),div(style="padding-left:2%",h3((""),style='color:DarkBlue; font-weight:500;')))),
+                                           column(6,div(style="padding-top:1.5%; display:flex",img(src="logo.png", width="50vh"),div(style="padding-left:2%",h3((""),style='color:DarkBlue; font-weight:500;')))),
                                            column(6,align='right',
                                             div(style="padding-top:3.5%; display:inline-block",
                                             actionBttn(
@@ -109,7 +109,7 @@ home_page <- fluidPage(style="padding:0%; margin:0%",
                        # Main Body
                fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;",
 
-                       fluidRow(column(10,div(style="padding-top:20%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
+                       fluidRow(column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
                                 ),
                        fluidRow( br(),br(),br(),br(),
                          fluidRow(
