@@ -52,7 +52,7 @@ mod1p <- div(h4(strong("Individual experiments")),br(),
              fluidRow(
                column(5,img(src='mod1.png',width="100%")),
                column(7,p("Anomality detection without a guide set"),br(),
-                      fluidRow(column(3, offset = 0,actionButton("switch_mod1", "Launch One-Time Tool"))),br(),
+                      fluidRow(column(3, offset = 0,actionButton("switch_mod1", "Launch"))),br(),
                       fluidRow(column(2, offset = 0,actionButton("help_mod1", "Help"))))
              ),
 )
@@ -60,7 +60,7 @@ mod2p <- div(h4(strong("Longitudinal tracking")),br(),
              fluidRow(
                column(5,img(src='mod2.png',width="100%")),
                column(7,p("Longitudinal benchmarking with a guide set"),br(),
-                      fluidRow(column(3, offset = 0,actionButton("switch_mod2", "Launch Longitudinal Tool"))),br(),
+                      fluidRow(column(3, offset = 0,actionButton("switch_mod2", "Launch"))),br(),
                       fluidRow(column(2, offset = 0,actionButton("help_mod2", "Help")))
                )
              ),
@@ -69,7 +69,7 @@ mod2p <- div(h4(strong("Longitudinal tracking")),br(),
 mod3p <- div(h4(strong("Complex QC")),br(),
              fluidRow(column(5,img(src='mod3.png',width="100%")),
                       column(7,p("Longitudinal benchmarking with a guide set for a pXn reference mix"),br(),
-                             fluidRow(column(3, offset = 0,actionButton("switch_mod3", "Launch Complex Tool"))), br(),
+                             fluidRow(column(3, offset = 0,actionButton("switch_mod3", "Launch"))), br(),
                              fluidRow(column(2, offset = 0, actionButton("help_mod3", "Help")))
                       ),
              )
@@ -109,7 +109,7 @@ home_page <- fluidPage(style="padding:0%; margin:0%",
                        # Main Body
                fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;",
 
-                       fluidRow(column(10,div(style="padding-top:20%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('Longitudinal system suitability monitoring and quality control for proteomic experiments',align="center")))
+                       fluidRow(column(10,div(style="padding-top:20%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
                                 ),
                        fluidRow( br(),br(),br(),br(),
                          fluidRow(
