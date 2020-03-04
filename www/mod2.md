@@ -1,4 +1,20 @@
-#### **Longitudinal QC**
-| | |
-| :---        |    :----:                           |
-| Allows the user to upload data of one or more peptide to assess optimality w.r.t the guide set for multiple runs      | <img src="mod2.png" width="200px"/> |
+# **Longitudinal QC**
+
+
+### **Module 2 of the MSstats-QC Framework**
+    
+
+#### **To use this tool and perform analysis you will need to have 2 data files:**
+
+1. Guide Set (See Note)
+2. Test Set
+
+
+`To preview the workflow of the tool please take a look at the slides at the bottom of the module2-info page.`
+
+### **Note**
+
+The current implementation requires the **Guide set** to have the **same number of observations** per peptide.  
+
+we're working on possible work-arounds and will release a change soon.
+

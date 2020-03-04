@@ -133,7 +133,7 @@ home_server <- function(input, output, session) {
   
   observeEvent(input$help_mod2, {
     showModal(modalDialog(
-      title = "Uploaded Data",
+      title = "More Info",
       size = "l",
       includeMarkdown("www/mod2.md"),
       easyClose = TRUE
