@@ -20,11 +20,14 @@ MSstatsQC is available for quality control data from SRM, DDA and DIA experiment
 #### **MSstatsQC Modules**  
 
 1. Module 1: individual experiments 
-   Module analyzes QC data where a guide set is not available and uses unsupervised learning methods (isolation forests) for anomaly detection. 
+   Module analyzes QC data where a guide set is not available and uses unsupervised learning methods (isolation forests) for anomaly detection.   
+   
 2. Module 2: longitudinal tracking
-   Module analyzes longitudinal QC data where a guide set is available and uses supervised learning methods (random forests) and statistical process control for suboptimality detection.
+   Module analyzes longitudinal QC data where a guide set is available and uses supervised learning methods (random forests) and statistical process control for suboptimality detection.   
+   
 3. Module 3: complex QC
-   Module analyzes longitudinal pXn reference QC samples where a guide set is available and uses supervised learning methods (random forests) and statistical process control for suboptimality detection.
+   Module analyzes longitudinal pXn reference QC samples where a guide set is available and uses supervised learning methods (random forests) and statistical process control for suboptimality detection.  
+   
 
 ### Installation of MSstatsQC R/Bioconductor package
 

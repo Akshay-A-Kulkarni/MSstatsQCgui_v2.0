@@ -1,8 +1,33 @@
-
-# Run the app ----
-# shinyApp(ui = mod2_ui, server = mod2_server)
-# runApp(appDir = getwd(), port = 8888,
-#        launch.browser = TRUE,
-#        host = getOption("shiny.host", "127.0.0.1"), workerId = "",
-#        quiet = FALSE, display.mode = c("auto", "normal", "showcase"),
-#        test.mode = getOption("shiny.testmode", FALSE))
+# library(shiny)
+# library(shiny.router)
+# library(shinythemes)
+# library(DT)
+# library(shinyBS)
+# library(shinyjs)
+# library(shinyWidgets)
+# library(waiter)
+# library(pushbar)
+# library(bsplus)
+# library(htmltools)
+# #####################################
+# library(plotly)
+# library(RecordLinkage)
+# library(MSstatsQC)
+# library(MSstatsQCgui)
+# library(dplyr)
+# library(ggExtra)
+# library(gridExtra)
+# library(grid)
+# library(fresh)
+# library(tippy)
+# library(tidyr)
+# library(shinyFeedback)
+# 
+# 
+# 
+# source("src/module1-ui.R")
+# source("src/module1-server.R")
+# 
+# 
+# # Run the app ----
+# shinyApp(ui = mod1_ui, server = mod1_server)

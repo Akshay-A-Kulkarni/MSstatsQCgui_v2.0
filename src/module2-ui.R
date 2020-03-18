@@ -77,10 +77,10 @@ mod2_ui <-  fluidPage(
                                           wellPanel(
                                             p("Upload your data (Comma-separated (*.csv) QC file format)"),
                                             p("To see acceptable example data, look at", strong("Help"),"tab"),
-                                            fluidRow(column(9,fileInput("filein", label= p(strong("Guide Data")), accept = c(".xlsx", ".csv"))),
+                                            fluidRow(column(9,fileInput("filein", label= p(strong("Guide Data")), accept = c(".csv"))),
                                                      column(3,style = "padding-top: 10%", tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset"))
                                                      ),
-                                            fluidRow(column(9,fileInput("testin", label= p(strong("Test Data")), accept = c(".xlsx", ".csv"))),
+                                            fluidRow(column(9,fileInput("testin", label= p(strong("Test Data")), accept = c(".csv"))),
                                                      column(3,style = "padding-top: 10%",tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset"))
                                             ),
                                             ),

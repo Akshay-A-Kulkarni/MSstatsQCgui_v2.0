@@ -21,6 +21,10 @@ library(grid)
 library(fresh)
 library(tippy)
 library(tidyr)
+library(shinyFeedback)
+library(h2o)
+library(DT)
+library(plotly)
 
 
 
@@ -34,10 +38,10 @@ if (!"package:MSstatsQCgui" %in% search())
 # Sourcing all modules pages to the main routing app.
 source("src/module1-ui.R")
 source("src/module1-server.R")
-source("src/module2-ui.R")
-source("src/module2-server.R")
-source("src/module3-ui.R")
-source("src/module3-server.R")
+# source("src/module2-ui.R")
+# source("src/module2-server.R")
+# source("src/module3-ui.R")
+# source("src/module3-server.R")
 
 
 cardCSS <- "box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -79,7 +83,7 @@ mod3p <- div(h4(strong("Complex QC")),br(),
 
 
 # Part of both pages.
-home_page <- fluidPage(style="padding:0%; margin:0%",
+home_page <- fluidPage(style="padding:0%; margin:0%; font-size:20px",
                         tags$head(
                           tags$style(HTML("@import url('https://fonts.googleapis.com/css?family=Open+Sans:300,400,700');"),
                                      HTML("padding-top:0;"))),
@@ -107,7 +111,7 @@ home_page <- fluidPage(style="padding:0%; margin:0%",
                                               color = "success")))
                                            )),
                        # Main Body
-               fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;",
+               fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;font-size:20px;",
 
                        fluidRow(column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
                                 ),
@@ -127,10 +131,12 @@ home_page <- fluidPage(style="padding:0%; margin:0%",
 home_server <- function(input, output, session) {
   
   observeEvent(input$switch_mod2, {
+    source("src/module2-ui.R")
+    source("src/module2-server.R")
     if (!is_page("module2")) {
       change_page("module2")}
   })
-  
+
   observeEvent(input$help_mod2, {
     showModal(modalDialog(
       title = "More Info",
@@ -139,19 +145,40 @@ home_server <- function(input, output, session) {
       easyClose = TRUE
     ))
   })
+
+  observeEvent(input$switch_mod1, {
+    source("src/module2-ui.R")
+    source("src/module2-server.R")
+    if (!is_page("module1")) {
+      change_page("module1")}
+  })
+  
+  observeEvent(input$help_mod1, {
+    showModal(modalDialog(
+      title = "More Info",
+      size = "l",
+      includeMarkdown("www/mod1.md"),
+      easyClose = TRUE
+    ))
+  })
+  
 }
 
 # Create routing. We provide routing path, a UI as well as a server-side callback for each page.
 router <- shiny.router::make_router(
   shiny.router::route("/", home_page, home_server),
+  shiny.router::route("module1", mod1_ui, mod1_server),
   shiny.router::route("module2", mod2_ui, mod2_server)
+  
 )
 
 # Create output for our router in main UI of Shiny app.
 ui <- fluidPage(
-  waiter::use_waiter(),
+  # waiter::use_waiter(),
   pushbar::pushbar_deps(),
   shinyjs::useShinyjs(),
+  useShinyFeedback(),
+  use_waitress(),
   shiny.router::router_ui()
 )
 

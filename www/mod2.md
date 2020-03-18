@@ -6,7 +6,7 @@
 
 #### **To use this tool and perform analysis you will need to have 2 data files:**
 
-1. Guide Set (See Note)
+1. Guide Set
 2. Test Set
 
 
@@ -16,5 +16,4 @@
 
 The current implementation requires the **Guide set** to have the **same number of observations** per peptide.  
 
-we're working on possible work-arounds and will release a change soon.
 

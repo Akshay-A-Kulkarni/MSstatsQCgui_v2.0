@@ -16,11 +16,7 @@ mod2_server <- function(input, output, session) {
       change_page("/")
       }
     })
-  
-  observeEvent(input$bottom_close, {
-    pushbar_close()
-  })  
-  
+
   
   ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
@@ -512,9 +508,9 @@ mod2_server <- function(input, output, session) {
     
   }, height = heatmap_height, width = heatmap_width)
   
-  # session$onSessionEnded(function() {
-  #   stopApp()
-  # })
+  session$onSessionEnded(function() {
+    stopApp()
+  })
   
 }
 
