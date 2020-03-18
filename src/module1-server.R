@@ -1,14 +1,11 @@
-library(h2o)
-library(DT)
-library(plotly)
-
 
 mod1_server <- function(input, output, session) {
   
   
   data <- reactiveValues(df = NULL, plot = NULL, cf = NULL )
   
-  
+  h2o.init(max_mem_size = "1g", nthreads = -1 )
+  h2o.removeAll()
   
   observeEvent(input$jumpToP2, {
     updateTabsetPanel(session, "inTabset",
@@ -16,10 +13,9 @@ mod1_server <- function(input, output, session) {
   },priority = 30)
   
   
-  observeEvent(input$filein, {
-    h2o.init(max_mem_size = "1g", nthreads = -1 )
-    h2o.removeAll()
-    file1 <- input$filein
+  observeEvent(input$anomalyfilein, {
+    
+    file1 <- input$anomalyfilein
     data$cf <-input$cf
     
     data_in <- read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
@@ -130,9 +126,9 @@ mod1_server <- function(input, output, session) {
   
   
   
-  session$onSessionEnded(function() {
-    h2o.shutdown(prompt = FALSE)
-    stopApp()
-  })
+  # session$onSessionEnded(function() {
+  #   h2o.shutdown(prompt = FALSE)
+  #   stopApp()
+  # })
   
 }

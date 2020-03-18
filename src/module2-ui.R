@@ -18,8 +18,6 @@
 hr_line <- HTML('<hr style ="border-color:black; font-size:5rem;">')
 
 
-
- 
 mod2_ui <-  fluidPage(
   navbarPage(theme = shinythemes::shinytheme('cosmo'),position = 'fixed-top',
              title = div(id='Logo', div(img(src="logo.png", height=75, width=75),"MSstatsQC"),
@@ -54,7 +52,7 @@ mod2_ui <-  fluidPage(
                                .modal-content, modal-lg {min-width: 80vw;}'))
              ),
              tabPanel(title= "About", icon = icon("bar-chart-o"), 
-                      fluidPage(style = "width:80%; align:center;",
+                      fluidPage(fluidRow(column(8,offset=2,style = "width:80%; align:center;",
                                                 includeMarkdown("www/mod2.md"),
                                                 h3("How-To:"),
                                                 br(),
@@ -66,7 +64,7 @@ mod2_ui <-  fluidPage(
                                                 br(), 
                                                 h4(strong("- Selecting Metrics")),
                                                 br(),
-                                                img(src="metrics.gif", width="80%" , align= "center"))),
+                                                img(src="metrics.gif", width="80%" , align= "center"))))),
 
              tabPanel(title = "Data Import & Metric Rules",icon = icon("upload"), id='upload_tab',
                       fluidPage(style = "width:95%",

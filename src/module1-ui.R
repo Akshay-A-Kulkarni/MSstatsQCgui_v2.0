@@ -1,12 +1,13 @@
-library(shiny)
-library(shinythemes)
-library(DT)
-library(shinyBS)
-library(waiter)
-library(pushbar)
-library(shinyjs)
-library(shinyWidgets)
-library(plotly)
+# library(shiny)
+# library(shinythemes)
+# library(DT)
+# library(shinyBS)
+# library(waiter)
+# library(pushbar)
+# library(shinyjs)
+# library(shinyWidgets)
+# library(plotly)
+# 
 
 mod1_ui <-fluidPage(
   navbarPage(id = "inTabset",
@@ -61,7 +62,7 @@ mod1_ui <-fluidPage(
                                   column(6,wellPanel(DT::dataTableOutput("table", height ="50vh"))),
                                   column(6,plotlyOutput('plot',height='60vh'))),
                                 wellPanel(fluidRow(
-                                          column(3,fileInput("filein", label= p(strong("Upload Dataset")), accept = c(".csv"))),
+                                          column(3,fileInput("anomalyfilein", label= p(strong("Upload Dataset")), accept = c(".csv"))),
                                           column(2,numericInput("lb", div("Starting Col Idx:", style="padding-bottom:6%;"),1, min = 1)),
                                           column(2,numericInput("ub", div("Ending Col Idx:", style="padding-bottom:6%;"), 2,min = 1)),
                                           column(4,sliderInput("cf", "Contamination Factor:",

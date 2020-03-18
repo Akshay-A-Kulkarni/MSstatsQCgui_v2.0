@@ -1,23 +1,6 @@
-source("src/plot-functions.R")
-source("src/data-validation.R")
-source("src/helper-functions.R")
-source("src/QCMetrics.R")
-
-
 mod2_server <- function(input, output, session) {
   
 
-  # setup_pushbar() # setup
-  
-  # guide$init()$start()
-  
-  observeEvent(input$switch_home, {
-    if (!is_page("/")) {
-      change_page("/")
-      }
-    })
-
-  
   ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
   

@@ -38,11 +38,15 @@ if (!"package:MSstatsQCgui" %in% search())
 # Sourcing all modules pages to the main routing app.
 source("src/module1-ui.R")
 source("src/module1-server.R")
-# source("src/module2-ui.R")
-# source("src/module2-server.R")
-# source("src/module3-ui.R")
-# source("src/module3-server.R")
+source("src/module2-ui.R")
+source("src/module2-server.R")
+source("src/module3-ui.R")
+source("src/module3-server.R")
 
+source("src/plot-functions.R")
+source("src/data-validation.R")
+source("src/helper-functions.R")
+source("src/QCMetrics.R")
 
 cardCSS <- "box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
             border-radius: 0.5rem;
@@ -131,8 +135,6 @@ home_page <- fluidPage(style="padding:0%; margin:0%; font-size:20px",
 home_server <- function(input, output, session) {
   
   observeEvent(input$switch_mod2, {
-    source("src/module2-ui.R")
-    source("src/module2-server.R")
     if (!is_page("module2")) {
       change_page("module2")}
   })
@@ -147,8 +149,6 @@ home_server <- function(input, output, session) {
   })
 
   observeEvent(input$switch_mod1, {
-    source("src/module2-ui.R")
-    source("src/module2-server.R")
     if (!is_page("module1")) {
       change_page("module1")}
   })
@@ -166,46 +166,44 @@ home_server <- function(input, output, session) {
 
 # Create routing. We provide routing path, a UI as well as a server-side callback for each page.
 router <- shiny.router::make_router(
-  shiny.router::route("/", home_page, home_server),
+  shiny.router::route("home", home_page, home_server),
   shiny.router::route("module1", mod1_ui, mod1_server),
   shiny.router::route("module2", mod2_ui, mod2_server)
-  
 )
 
 # Create output for our router in main UI of Shiny app.
-ui <- fluidPage(
-  # waiter::use_waiter(),
-  pushbar::pushbar_deps(),
+ui <- shinyUI(fluidPage(
+  waiter::use_waiter(),
   shinyjs::useShinyjs(),
-  useShinyFeedback(),
-  use_waitress(),
+  shinyFeedback::useShinyFeedback(),
+  waiter::use_waitress(),
   shiny.router::router_ui()
-)
+))
 
 # Plug router into Shiny server.
-server <- function(input, output, session) {
+server <- shinyServer(function(input, output, session) {
   router(input, output, session)
-  
+  # 
   # loading_screen <- tagList(
   #   h3("Initializing MSstatsQC", style = "color:white;"),
   #   br(),
   #   waiter::spin_flower(),
-  #   div(style='padding:15vh') 
+  #   div(style='padding:15vh')
   # )
-  
+  # 
   # loadScreen <- Waiter$new(html = loading_screen, color='#242424')
-  #
-  #
+  # 
+  # 
   # loadScreen$show()
-  #
+  # 
   # Sys.sleep(2)
-  #
+  # 
   # loadScreen$update(html = tagList(img(src="logo.png", height=150),div(style='padding:15vh')))
-  #
+  # 
   # Sys.sleep(1)
-  #
+  # 
   # loadScreen$hide()
-}
+})
 
 # Run server in a standard way.
 shinyApp(ui=ui, server=server)
