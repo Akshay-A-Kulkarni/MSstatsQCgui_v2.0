@@ -1,0 +1,277 @@
+---
+title: "isoforest"
+output: html_notebook
+---
+
+
+## Tree Api helper functions for visualising decision tree for analysis
+```{r}
+
+dfH2oTree = h2o.getModelTree(model = anomaly_classificationtree, tree_number = 1)
+
+library(data.tree)
+
+createDataTree <- function(h2oTree) {
+  h2oTreeRoot = h2oTree@root_node
+  dataTree = Node$new(h2oTreeRoot@split_feature)
+  dataTree$type = 'split'
+  addChildren(dataTree, h2oTreeRoot)
+  return(dataTree)
+}
+
+addChildren <- function(dtree, node) {
+  
+  if(class(node)[1] != 'H2OSplitNode') return(TRUE)
+  
+  feature = node@split_feature
+  id = node@id
+  na_direction = node@na_direction
+  
+  if(is.na(node@threshold)) {
+    leftEdgeLabel = printValues(node@left_levels, 
+                                na_direction=='LEFT', 4)
+    rightEdgeLabel = printValues(node@right_levels, 
+                                 na_direction=='RIGHT', 4)
+  }else {
+    leftEdgeLabel = paste("<", node@threshold, 
+                          ifelse(na_direction=='LEFT',',NA',''))
+    rightEdgeLabel = paste(">=", node@threshold, 
+                           ifelse(na_direction=='RIGHT',',NA',''))
+  }
+  
+  left_node = node@left_child
+  right_node = node@right_child
+  
+  if(class(left_node)[[1]] == 'H2OLeafNode')
+    leftLabel = paste("prediction:", left_node@prediction)
+  else
+    leftLabel = left_node@split_feature
+  
+  if(class(right_node)[[1]] == 'H2OLeafNode')
+    rightLabel = paste("prediction:", right_node@prediction)
+  else
+    rightLabel = right_node@split_feature
+  
+  if(leftLabel == rightLabel) {
+    leftLabel = paste(leftLabel, "(L)")
+    rightLabel = paste(rightLabel, "(R)")
+  }
+  
+  dtreeLeft = dtree$AddChild(leftLabel)
+  dtreeLeft$edgeLabel = leftEdgeLabel
+  dtreeLeft$type = ifelse(class(left_node)[1] == 'H2OSplitNode', 'split', 'leaf')
+  
+  dtreeRight = dtree$AddChild(rightLabel)
+  dtreeRight$edgeLabel = rightEdgeLabel
+  dtreeRight$type = ifelse(class(right_node)[1] == 'H2OSplitNode', 'split', 'leaf')
+  
+  addChildren(dtreeLeft, left_node)
+  addChildren(dtreeRight, right_node)
+  
+  return(FALSE)
+}
+
+printValues <- function(values, is_na_direction, n=4) {
+  l = length(values)
+  if(l == 0)
+    value_string = ifelse(is_na_direction, "NA", "")
+  else
+    value_string = paste0(paste0(values[1:min(n,l)], collapse = ', '),
+                          ifelse(l > n, ",...", ""),
+                          ifelse(is_na_direction, ", NA", ""))
+  return(value_string)
+}
+
+```
+
+
+
+## ISOLATION FOREST
+
+```{r}
+    
+library(h2o)
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(RecordLinkage)
+library(ggfortify)
+
+# h2o.shutdown(prompt = F)
+h2o.init(ip = "localhost", port = 54321, max_mem_size = "5g", nthreads = -1 )
+
+h2o.removeAll() # Removes all data from cluster.
+
+input_df <- read.csv("simData_delta7.csv")
+
+
+# input_df <- input_df %>% filter(peptide != "EACFAVEGPK")
+
+input_df <- input_df %>% filter(peptide == "YICDNQDTISSK")
+
+input_df <- input_df[,2:8]
+
+# scale all numeric cols
+    # num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+    # input_df <- input_df %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+pass <-  input_df[input_df$RESPONSE == "PASS",]
+
+fail <-  input_df[input_df$RESPONSE == "FAIL",]
+
+maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1)) %>% select(-peptide)
+
+# maindf <- maindf %>% mutate_at(1:length(maindf)-1, ~(scale(., center = T) %>% as.vector))
+# data_h2o <- as.h2o(maindf[1:length(maindf)-1]) 
+
+data_h2o <- as.h2o(maindf, destination_frame = "data_h2o") 
+
+end <- length(data_h2o) - 1
+    
+isomodel <- h2o.isolationForest(training_frame=data_h2o[1:end],
+                                 model_id = "isolation_forest.hex",
+                                 sample_rate = 0.1,
+                                 ntrees = 1000,
+                                 seed= 123)
+
+
+predictions <- h2o.predict(isomodel, data_h2o)
+
+
+# Threshold
+conf <-  0.9
+thresh <-  h2o.quantile(predictions$predict,conf)
+
+
+
+data_h2o$Anom_Score <- predictions$predict
+data_h2o$Mean_length <- predictions$predict
+data_h2o$Predicted_Class <- h2o.ifelse(predictions$predict >= thresh , "FAIL", "PASS")
+
+isoforest_result <- as.data.frame(data_h2o)
+
+# plotting mean length and score hists
+hist(isoforest_result$Mean_length)
+qplot(isoforest_result$Anom_Score, geom="histogram") 
+
+#appending output to input df 
+isoforest_result
+
+```
+
+
+# PCA plot Fucntion
+```{r}
+plot_pca <- function(data){
+    
+    # Assumes all numeric cols with anomaly score col last
+    num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+    pca <- prcomp(data[c(num_cols)], scale. = T , center = T)
+    pcainfo <-  summary(pca)
+    x <- as.vector(pca[["x"]][,1])
+    y <- as.vector(pca[["x"]][,2])
+    z <- as.vector(pca[["x"]][,3])
+    anom <- as.vector(data[,ncol(data)])
+    pca_df <-  as.data.frame(cbind(x,y,z,anom))
+    
+    conf <-  0.9
+    thresh <-  quantile(pca_df$anom,conf)
+    
+    pca_df <- pca_df %>% mutate(anom = if_else(anom > thresh, 'Anomaly', 'Normal') )
+    fig <- plot_ly(pca_df, x = ~x, y = ~y, z = ~z, color = ~anom, colors = c('#BF382A', '#0C4B8E'))
+    fig <- fig %>% add_markers()
+    fig <- fig %>% layout(scene = list(xaxis = list(title = paste('PC1 ', pcainfo$importance[2]*100,"%")),
+                                       yaxis = list(title = paste('PC2 ', pcainfo$importance[5]*100,"%")),
+                                       zaxis = list(title = paste('PC3 ', pcainfo$importance[8]*100,"%"))))
+    
+    fig
+}
+
+plot_pca(isoforest_result[c(1:5,7)])
+```
+
+## Plotting a single decision tree fitted on data given my isoforest.
+
+```{r}
+
+print(data_h2o)
+
+anomaly_classificationtree = h2o.randomForest(x = c(1:5), y = 9, 
+                        training_frame = data_h2o,
+                        ntrees = 1, min_rows = 1, sample_rate = 1,            
+                        max_depth = 5,
+                        seed = 1)
+
+
+dfTree = createDataTree(dfH2oTree)
+
+GetEdgeLabel <- function(node) {return (node$edgeLabel)}
+GetNodeShape <- function(node) {switch(node$type, 
+                                       split = "diamond", leaf = "oval")}
+GetFontName <- function(node) {switch(node$type, 
+                                      split = 'Palatino-bold', 
+                                      leaf = 'Palatino')}
+SetEdgeStyle(dfTree, fontname = 'Palatino-italic', 
+             label = GetEdgeLabel, labelfloat = TRUE,
+             fontsize = "26", fontcolor='royalblue4')
+SetNodeStyle(dfTree, fontname = GetFontName, shape = GetNodeShape, 
+             fontsize = "26", fontcolor='royalblue4',
+             height="0.75", width="1")
+
+SetGraphStyle(dfTree, rankdir = "UD", dpi=70.)
+
+plot(dfTree, output = "graph")
+
+
+```
+
+
+
+## Testing stuff
+
+```{r}
+library(PCAtools)
+
+p <- pca(maindf[2:5], metadata = maindf, removeVar = 0.1)
+
+
+pc.cr <- princomp(main_input, cor = TRUE)
+pairs(pc.cr$loadings, col=c("red", "green", "blue"))
+
+
+library(lattice)
+library(mclust)
+dat <- maindf
+dat.pca <- prcomp(main_input)
+dat.em <- mclustBIC(main_input) 
+splom(as.data.frame(dat.pca$x), color = dat$RESPONSE, cex=2,pch='*')
+
+```
+
+```{r}
+autoplot(prcomp(df[2:5]), data = df[2:7], colour = 'Anomaly_Label')
+```
+
+```{r}
+
+library(Rtsne)
+# perform dimensionality redcution to 2D
+set.seed(123)
+tsne <- Rtsne(LVN[1:4], dims = 2, check_duplicates = FALSE, perplexity=15, verbose=TRUE, max_iter = 500)
+
+plot(tsne$Y, col = LVN$RESPONSE, pch = 19, cex=1.5)
+
+# colors = rainbow(length(unique(df$Anomaly_Score)))
+# names(colors) = unique(df$Anomaly_Score)
+# par(mgp=c(2.5,1,0))
+# plot(tsne$Y, t='n', main="tSNE", xlab="tSNE dimension 1", ylab="tSNE dimension 2", "cex.main"=2, "cex.lab"=1.5)
+# text(tsne$Y, labels=df$Anomaly_Score, col=colors[df$Anomaly_Score])
+# # display the results of t-SNE
+# cols <- rainbow(10)
+# plot(tsne$Y, t='n')
+# text(tsne$Y, labels=df[,10])
+
+
+
+
+```
