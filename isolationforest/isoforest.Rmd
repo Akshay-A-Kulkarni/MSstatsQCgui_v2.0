@@ -86,69 +86,7 @@ printValues <- function(values, is_na_direction, n=4) {
 
 
 
-# ISOLATION FOREST
-
-##Calculate threshold
-```{r}
-library(h2o)
-library(plotly)
-library(dplyr)
-library(tidyr)
-library(RecordLinkage)
-library(ggfortify)
-
-# h2o.shutdown(prompt = F)
-h2o.init(ip = "localhost", port = 54321, max_mem_size = "5g", nthreads = -1 )
-
-h2o.removeAll() # Removes all data from cluster.
-
-input_df <- Data.set
-
-input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK")
-
-#input_df <- input_df %>% filter(peptide == "YICDNQDTISSK")
-
-input_df <- input_df[,2:7]
-
-# scale all numeric cols
-    # num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
-    # input_df <- input_df %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
-
-pass <-  input_df[input_df$RESPONSE == "PASS",]
-
-#fail <-  input_df[input_df$RESPONSE == "FAIL",]
-
-maindf <- rbind(sample_frac(pass,0.95),sample_frac(pass,0.05)) %>% select(-peptide)
-
-# maindf <- maindf %>% mutate_at(1:length(maindf)-1, ~(scale(., center = T) %>% as.vector))
-# data_h2o <- as.h2o(maindf[1:length(maindf)-1]) 
-
-data_h2o <- as.h2o(maindf, destination_frame = "data_h2o") 
-
-end <- length(data_h2o) - 1
-    
-isomodel <- h2o.isolationForest(training_frame=data_h2o[1:end],
-                                 model_id = "isolation_forest.hex",
-                                sample_rate = 0.1,
-                                 ntrees = 2000,
-                                 seed= 123
-
-)
-predictions <- h2o.predict(isomodel, data_h2o)
-
-data_h2o$Anom_Score <- predictions$predict
-
-isoforest_result <- as.data.frame(data_h2o)
-
-n = length(isoforest_result[,6])/2
-B = 10000
-result = rep(NA, B)
-for (i in 1:B) {
-  boot.sample = sample(n, replace = TRUE)
-  result[i] = quantile(isoforest_result[,6][boot.sample], 0.90)
-}
-thresh<-mean(result)
-```
+# ISOLATION FOREST h2o
 
 ```{r}
     
@@ -250,9 +188,21 @@ iso$fit(maindf[,1:4])
 # Obtain anomaly scores
 results<-iso$scores
 # quantiles of anomaly scores
-q<-quantile(results$anomaly_score[1:900]
-         , probs = seq(0.9, 0.9, length.out = 1)
-         )
+contamination.factor<-0.90
+q<-quantile(results$anomaly_score[1:900],
+            probs = seq(contamination.factor,
+                        contamination.factor, length.out = 1))
+
+#2. way of calculating q based on bootstrap
+n = length(results$anomaly_score)/2
+B = 10000
+result = rep(NA, B)
+for (i in 1:B) {
+  boot.sample = sample(n, replace = TRUE)
+  result[i] = quantile(results$anomaly_score[boot.sample], contamination.factor)
+}
+q<-median(result)
+
 outlier<-as.factor(ifelse(results$anomaly_score >=q, "FAIL", "PASS"))
 results<-cbind(results, outlier, RESPONSE=maindf$RESPONSE)
 
