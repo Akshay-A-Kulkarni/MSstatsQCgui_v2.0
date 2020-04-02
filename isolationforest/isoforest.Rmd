@@ -97,67 +97,22 @@ library(tidyr)
 library(RecordLinkage)
 library(ggfortify)
 
+
+
 # h2o.shutdown(prompt = F)
 h2o.init(ip = "localhost", port = 54321, max_mem_size = "5g", nthreads = -1 )
 
 h2o.removeAll() # Removes all data from cluster.
 
-input_df <- Data.set
 
-# input_df <- input_df %>% filter(peptide != "EACFAVEGPK")
-input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK")
+dir <- getwd()
+if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
+  guide.set <- read.csv("guide_set.csv")
+  setwd("..")
+  source("isolationforest/simulate_test_data.R")
+  setwd(dir)
+}
 
-#input_df <- input_df %>% filter(peptide == "YICDNQDTISSK")
-
-input_df <- input_df[,2:7]
-
-# scale all numeric cols
-    # num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
-    # input_df <- input_df %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
-
-pass <-  input_df[input_df$RESPONSE == "PASS",]
-
-fail <-  input_df[input_df$RESPONSE == "FAIL",]
-
-maindf <- rbind(sample_frac(pass,0.5),sample_frac(fail,0.5)) %>% select(-peptide)
-
-# maindf <- maindf %>% mutate_at(1:length(maindf)-1, ~(scale(., center = T) %>% as.vector))
-# data_h2o <- as.h2o(maindf[1:length(maindf)-1]) 
-
-data_h2o <- as.h2o(maindf, destination_frame = "data_h2o") 
-
-end <- length(data_h2o) - 1
-    
-isomodel <- h2o.isolationForest(training_frame=data_h2o[1:end],
-                                 model_id = "isolation_forest.hex",
-                                 sample_rate = 0.1,
-                                 ntrees = 2000,
-                                 seed= 123
-
-)
-predictions <- h2o.predict(isomodel, data_h2o)
-
-data_h2o$Anom_Score <- predictions$predict
-data_h2o$Mean_length <- predictions$predict
-data_h2o$Predicted_Class <- h2o.ifelse(predictions$predict >= thresh , "FAIL", "PASS")
-
-isoforest_result <- as.data.frame(data_h2o)
-
-# plotting mean length and score hists
-hist(isoforest_result$Mean_length)
-qplot(isoforest_result$Anom_Score, geom="density") 
-
-#appending output to input df 
-isoforest_result
-table(isoforest_result$RESPONSE, isoforest_result$Predicted_Class)
-
-```
-
-# SOLITUDE package
-```{r}
-library(solitude)
-library(dplyr)
-#You need to first run simulation code to create a Data.set
 input_df <- Data.set
 
 # input_df <- input_df %>% filter(peptide != "EACFAVEGPK")
@@ -177,16 +132,110 @@ fail <-  input_df[input_df$RESPONSE == "FAIL",]
 
 maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1)) %>% select(-peptide)
 
-iso <- isolationForest$new()
+# maindf <- maindf %>% mutate_at(1:length(maindf)-1, ~(scale(., center = T) %>% as.vector))
+# data_h2o <- as.h2o(maindf[1:length(maindf)-1]) 
 
-# fit for attrition data
+data_h2o <- as.h2o(maindf, destination_frame = "data_h2o") 
+
+end <- length(data_h2o) - 1
+    
+isomodel <- h2o.isolationForest(training_frame=data_h2o[1:end],
+                                 model_id = "isolation_forest.hex",
+                                 sample_rate = 0.1,
+                                 ntrees = 1000,
+                                 seed= 123
+
+)
+
+predictions <- h2o.predict(isomodel, data_h2o)
+
+isoforest_results <- as.data.frame(predictions)
+colnames(isoforest_results) <- c("Anom_Score","Mean_Length")
+
+# Bootstrap quantile estimation
+contamination.factor <- 0.9
+
+n = length(isoforest_results$Anom_Score)/2
+B = 10000
+boot_result = rep(NA, B)
+for (i in 1:B) {
+  boot.sample = sample(n, replace = TRUE)
+  boot_result[i] = quantile(isoforest_results$Anom_Score[boot.sample], contamination.factor)
+}
+
+thresh<-median(boot_result)
+
+isoforest_results$predicted_label  <- as.factor(ifelse(isoforest_results$Anom_Score >= thresh, "FAIL", "PASS"))
+isoforest_results$true_label <- maindf$RESPONSE
+# isoforest_result <- as.data.frame(data_h2o)
+# plotting mean length and score hists
+hist(as.vector(predictions$mean_length))
+qplot(isoforest_results$Anom_Score, geom="density") 
+
+#appending output to input df 
+isoforest_results
+
+
+
+table(isoforest_results$true_label, isoforest_results$predicted_label)
+
+```
+
+# SOLITUDE package
+```{r}
+library(solitude)
+library(dplyr)
+
+# utility dir func (moved necessary dependancies in src folder in root of repo)
+dir <- getwd()
+if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
+  guide.set <- read.csv("guide_set.csv")
+  setwd("..")
+  source("isolationforest/simulate_test_data.R")
+  setwd(dir)
+}
+
+
+#You need to first run simulation code to create a Data.set
+input_df <- Data.set
+
+levels(input_df$peptide)
+# input_df <- input_df %>% filter(peptide != "EACFAVEGPK")
+input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK")
+
+# input_df <- input_df %>% filter(peptide == "YICDNQDTISSK")
+
+input_df <- input_df[,2:7]
+
+# scale all numeric cols
+    # num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+    # input_df <- input_df %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+pass <-  input_df[input_df$RESPONSE == "PASS",]
+
+fail <-  input_df[input_df$RESPONSE == "FAIL",]
+
+maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1)) %>% dplyr::select(-peptide)
+
+
+iso <- isolationForest$new(
+                           num_trees = 1000,
+                           sample_size = nrow(maindf)*0.8,
+                           replace = F,
+                           mtry = base::round(sqrt(length(colnames(maindf)))),
+                           seed = 123
+                           )
+
+# fit for data
 iso$fit(maindf[,1:4])
 
 ## Building Isolation Forest ... done
 ## Computing depth of terminal nodes ... done
-
 # Obtain anomaly scores
-results<-iso$scores
+# results<-iso$scores
+
+results <- iso$predict(maindf[,1:4])
+
 # quantiles of anomaly scores
 contamination.factor<-0.90
 q<-quantile(results$anomaly_score[1:900],
@@ -196,14 +245,15 @@ q<-quantile(results$anomaly_score[1:900],
 #2. way of calculating q based on bootstrap
 n = length(results$anomaly_score)/2
 B = 10000
-result = rep(NA, B)
+boot_result = rep(NA, B)
 for (i in 1:B) {
   boot.sample = sample(n, replace = TRUE)
-  result[i] = quantile(results$anomaly_score[boot.sample], contamination.factor)
+  boot_result[i] = quantile(results$anomaly_score[boot.sample], contamination.factor)
 }
-q<-median(result)
 
-outlier<-as.factor(ifelse(results$anomaly_score >=q, "FAIL", "PASS"))
+thresh<-median(boot_result)
+
+outlier<-as.factor(ifelse(results$anomaly_score >= thresh, "FAIL", "PASS"))
 results<-cbind(results, outlier, RESPONSE=maindf$RESPONSE)
 
 table(results$RESPONSE, results$outlier)
@@ -236,7 +286,8 @@ plot_pca <- function(data){
     fig
 }
 
-plot_pca(isoforest_result[c(1:4,6)])
+x <- cbind(maindf[1:4],results$anomaly_score)
+plot_pca(x)
 ```
 
 ## Plotting a single decision tree fitted on data given my isoforest.

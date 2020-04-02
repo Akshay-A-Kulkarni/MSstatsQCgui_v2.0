@@ -8,11 +8,11 @@
   #print(peptide)
   
   #generate in-control observations
-  source("sample_density_function.R")
-  source("auto_add_features.R")
-  source("robust_scaling.R")
+  source("src/sample_density_function.R")
+  source("src/auto_add_features.R")
+  source("src/robust_scaling.R")
   
-  beta=3
+  beta= 3
   sim.size=1000
   
   sample_density_sim <- function(guide.set, peptide, n){

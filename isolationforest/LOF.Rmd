@@ -1,0 +1,139 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+
+library(DMwR)
+library(dplyr)
+
+input_rawdf <- read.csv("simData_delta7.csv")
+
+input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK") %>% dplyr::select(3:7)
+
+pass <-  input_df[input_df$RESPONSE == "PASS",]
+
+fail <-  input_df[input_df$RESPONSE == "FAIL",]
+
+maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1))
+
+
+# scale all numeric cols
+num_cols <- colnames(dplyr::select_if(maindf, is.numeric))
+maindf <- maindf %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+outlier.scores <- lofactor(maindf[1:4], k=10)
+
+plot(density(outlier.scores))
+
+outliers <- order(outlier.scores, decreasing = T)[1:20]
+
+thr <-  quantile(outlier.scores, .9)
+out_index = if_else(outlier.scores >= thr, "FAIL" ,"PASS")
+
+print(outliers)
+
+maindf$Predicted <- as.factor(ifelse(outlier.scores >= thr, "FAIL", "PASS")) 
+# results<-cbind(results, outlier, RESPONSE=maindf$RESPONSE)
+maindf$lof_score <- outlier.scores
+
+table(maindf$RESPONSE, maindf$Predicted)
+
+tn <- nrow(maindf)
+
+labels <- 1:n
+
+labels[-outliers] <- "."
+
+biplot(prcomp(maindf[1:4]), cex=.8, xlabs=labels)
+
+pch <- rep(".", n)
+
+pch[outliers] <- "+"
+
+col <- rep("black", n)
+
+
+col[outliers] <- "red"
+
+pairs(maindf[1:4], pch=pch, col=col)
+
+```
+
+```{r}
+library(Rlof)
+outlier.scores <- lof(maindf, k=5)
+# try with different number of neighbors (k = 5,6,7,8,9 and 10)
+outlier.scores <- lof(maindf[1:4], k=c(5:10))
+
+
+library(Rlof)
+ 
+set.seed(124)
+ 
+test <-  input_df %>% filter(peptide == "SLHTLFGDELCK") %>% dplyr::select(c(3:7))
+
+pass <-  test[test$RESPONSE == "PASS",]
+
+fail <-  test[test$RESPONSE == "FAIL",]
+
+test <- rbind(sample_frac(pass,0.98),sample_frac(fail,0.02))
+# plot(test, col="blue", type='p', pch=19)
+ 
+mlof <-  lof(test[1:4], k=5)
+print(mlof) 
+ 
+thr <-  quantile(mlof, .9)
+out_index = if_else(mlof >= thr, "X" ,".")
+
+col <-if_else(out_index == ".", "red" ,"blue")
+
+test$anom <-  out_index
+
+print(out_index)
+print(test[out_index,])
+   
+test.pca <- prcomp(test[1:4], scale. = T, center = T)
+
+summary(test.pca)
+
+biplot(test.pca, cex=.8, xlabs=out_index)
+pairs(maindf[1:4], pch=out_index, col=col)
+
+
+```
+
+
+
+```{r}
+library(magrittr)  # to use piping %>%
+library(ggplot2)   # for ploting
+library(MASS)      # to calculate the pseudo-inverse of a matrix
+library(caret)     # to center our data by subtracting its mean
+library(reshape2)
+
+X=data1$X
+Xval=data1$Xval   # This is cross-validation data
+yval =data1$yval
+head(X)
+
+X=as.data.frame(X)
+names(X)=c("Latency (ms)", "Throughput (mb/s)")
+XX=melt(maindf[1])
+
+ df <- melt(maindf[metric])
+
+for (metric in colnames(maindf[1:4])) {
+  df <- melt(maindf[metric])
+  
+  p <- df %>%ggplot(aes(x=value,fill=variable, color=variable))+
+  geom_density(alpha = 0.3)+ggtitle(paste('Distibution of', metric))
+  
+  plot(p)
+  }
+
+
+```
