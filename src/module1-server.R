@@ -2,7 +2,7 @@
 mod1_server <- function(input, output, session) {
   
   
-  data <- reactiveValues(df = NULL, plot = NULL, cf = NULL )
+  data <- reactiveValues(df = NULL, plot = NULL, cf = NULL, tree_obj= NULL, rule_table= NULL )
 
   observeEvent(input$jumpToP2, {
     updateTabsetPanel(session, "inTabset",
@@ -48,17 +48,31 @@ mod1_server <- function(input, output, session) {
   output$table <- DT::renderDataTable(DT::datatable({
     req(data$df)
     outputdata <- data$df
-    data$df <- outputdata
     outputdata
   }
   ,fillContainer = T
   ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,
                   rowCallback = DT::JS(sprintf('function(row, data) {
-                                          if (String(data[%s]) == "Anomaly"  ){
-                                                  $("td", row).css("background", "#BF382A");
+                                          if (String(data[%s]).trim() == "Anomaly"  ){
+                                                  $("td", row).css("background", "#994141");
                                                   $("td", row).css("color", "white");}}',toString(length(data$df))))
                   )
   ))
+  
+  output$ruletable <- DT::renderDataTable(DT::datatable({
+    req(data$tree_obj)
+    tree <- data$tree_obj
+    data$rule_table <- get_rule_table(tree)
+  },escape = F
+  ,fillContainer = T
+  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,
+                  rowCallback = DT::JS(sprintf('function(row, data) {
+                                          if (String(data[%s]).trim() == "Anomaly"  ){
+                                                  $("td", row).css("background", "#994141");
+                                                  $("td", row).css("color", "white");}}',toString(1)))
+  )
+  ))
+  
   
   output$pairplot <- renderPlot({
     req(data$df)
@@ -84,7 +98,7 @@ mod1_server <- function(input, output, session) {
     waitress <- Waitress$new("#inPlotSet", theme = "overlay-percent")
     for(i in 1:10){
       waitress$inc(10) # increase by 10%
-      Sys.sleep(.5)
+      Sys.sleep(.1)
     }
     data$plot <- get_anomaly_plot(data$df)
     waitress$close() # hide when done
@@ -100,13 +114,25 @@ mod1_server <- function(input, output, session) {
     # minimal example
     req(data$plot)
     data_in <- data$df
+    data$tree_obj <- build_tree(data_in)
+    visTree(data$tree_obj, main = "Anomaly Classification Tree", width = "100%")
+  })
+
+  build_tree <- function(data_in){
     Anomaly <- as.vector(data_in$anom)
     input_df <- cbind(data_in[input$lb:input$ub],Anomaly)
     tree <- rpart(Anomaly~., data=input_df, method="class")
-
-    visTree(tree, main = "Classification Tree", width = "100%")
-  })
-
+    tree
+  }
+  
+  get_rule_table <- function(rpart_tree_obj){
+    
+    rule_table <- as.data.frame(rpart.rules(rpart_tree_obj, extra = 4, cover = TRUE, roundint = F))
+    cols <- colnames(rule_table)
+    colnames(rule_table) <- c("Response",paste0("Probabilty <br>","[",cols[2],"]"),seq(3,length(rule_table)-1),"% of Total Obs.")
+    rules <- unite(rule_table, 'Conditions/Rules',4:length(rule_table)-1, sep = ' ', remove = TRUE)
+    rules
+  }
   
   get_anomaly_plot <- function(df_input){
     # waitress <- Waitress$new("#loadpca", theme = "overlay-percent") 

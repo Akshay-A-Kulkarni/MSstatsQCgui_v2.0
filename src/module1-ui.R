@@ -65,7 +65,8 @@ mod1_ui <-fluidPage(
                                            tabsetPanel(id = 'inPlotSet',
                                                   tabPanel(value  = 'pairplottab',title = "Original Plot", plotOutput('pairplot',height='60vh')),
                                                   tabPanel(value = 'pcaplottab',title = "PCA Plot", div(id = "loadpca",plotlyOutput('plot',height='60vh'))),
-                                                  tabPanel(value = 'treeplot', title = "Tree Plot", visNetworkOutput("tree",height='60vh'))
+                                                  tabPanel(value = 'treeplot', title = "Tree Plot", visNetworkOutput("tree",height='60vh')),
+                                                  tabPanel(value = 'treeplot', title = "Extracted Rules", DT::dataTableOutput("ruletable", height ="60vh"))
                                                   )
                                               ),
                                          )

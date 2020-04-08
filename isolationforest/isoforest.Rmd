@@ -340,7 +340,7 @@ tree <- rpart(Anomaly~., data=rpart.df, method="class")
 rpart.plot(tree, box.palette="RdGn", shadow.col="gray", nn=TRUE, clip.right.labs = FALSE, branch = .3, under = TRUE)
 rpart.plot(tree, box.palette="RdGn", shadow.col="gray", nn=TRUE)
 
-TREE_RULES <- rpart.rules(tree,extra = 4, cover = TRUE)
+TREE_RULES <- rpart.rules(tree,extra = 4, cover = TRUE, roundint = F)
 
 levels(rpart.df$Anomaly)
 
@@ -353,7 +353,22 @@ visTree(tree, main = "Classification Tree", width = "100%")
       
 # shiny::runApp(system.file("shiny", package = "visNetwork"))
 
+TREE_RULES
+
 ```
+
+```{r}
+test <- as.data.frame(TREE_RULES)
+x <- colnames(test)
+colnames(newtest) <- c("Response Col","Probabilty",seq(3,length(newtest)-1),"% of Total Obs.")
+newtest
+
+rules <- unite(newtest, 'Conditions/Rules',4:length(newtest)-1, sep = ' ', remove = TRUE)
+
+rules$`% of Total Obs.`
+
+```
+
 
 ```{r}
 library(party)
