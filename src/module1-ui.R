@@ -59,8 +59,17 @@ mod1_ui <-fluidPage(
              tabPanel(title = "Data Import & Plotting",value = "panel2", icon = icon("upload"), id='upload_tab',
                       fluidPage(style = "width:95%",
                                 fluidRow(
-                                  column(6,wellPanel(DT::dataTableOutput("table", height ="50vh"))),
-                                  column(6,plotlyOutput('plot',height='60vh'))),
+                                  column(6,wellPanel(DT::dataTableOutput("table", height ="60vh"))),
+                                  column(6,
+                                         fluidPage(
+                                           tabsetPanel(id = 'inPlotSet',
+                                                  tabPanel(value  = 'pairplottab',title = "Original Plot", plotOutput('pairplot',height='60vh')),
+                                                  tabPanel(value = 'pcaplottab',title = "PCA Plot", div(id = "loadpca",plotlyOutput('plot',height='60vh'))),
+                                                  tabPanel(value = 'treeplot', title = "Tree Plot", visNetworkOutput("tree",height='60vh'))
+                                                  )
+                                              ),
+                                         )
+                                  ),
                                 wellPanel(fluidRow(
                                           column(3,fileInput("anomalyfilein", label= p(strong("Upload Dataset")), accept = c(".csv"))),
                                           column(2,numericInput("lb", div("Starting Col Idx:", style="padding-bottom:6%;"),1, min = 1)),

@@ -25,7 +25,10 @@ library(shinyFeedback)
 library(h2o)
 library(DT)
 library(plotly)
-
+library(solitude)
+library(rpart)
+library(rpart.plot)
+library(visNetwork)
 
 
 if (!"package:MSstatsQCgui" %in% search())

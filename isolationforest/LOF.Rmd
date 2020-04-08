@@ -83,7 +83,7 @@ fail <-  test[test$RESPONSE == "FAIL",]
 test <- rbind(sample_frac(pass,0.98),sample_frac(fail,0.02))
 # plot(test, col="blue", type='p', pch=19)
  
-mlof <-  lof(test[1:4], k=5)
+mlof <-  lof(maindf[1:4], k=10)
 print(mlof) 
  
 thr <-  quantile(mlof, .9)

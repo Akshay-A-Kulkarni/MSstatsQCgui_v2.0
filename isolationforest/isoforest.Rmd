@@ -7,8 +7,6 @@ output: html_notebook
 ## Tree Api helper functions for visualising decision tree for analysis
 ```{r}
 
-dfH2oTree = h2o.getModelTree(model = anomaly_classificationtree, tree_number = 1)
-
 library(data.tree)
 
 createDataTree <- function(h2oTree) {
@@ -130,8 +128,7 @@ pass <-  input_df[input_df$RESPONSE == "PASS",]
 
 fail <-  input_df[input_df$RESPONSE == "FAIL",]
 
-maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1)) %>% select(-peptide)
-
+maindf <- rbind(sample_frac(pass,0.95),sample_frac(fail,0.05)) %>% select(-peptide)
 # maindf <- maindf %>% mutate_at(1:length(maindf)-1, ~(scale(., center = T) %>% as.vector))
 # data_h2o <- as.h2o(maindf[1:length(maindf)-1]) 
 
@@ -141,10 +138,10 @@ end <- length(data_h2o) - 1
     
 isomodel <- h2o.isolationForest(training_frame=data_h2o[1:end],
                                  model_id = "isolation_forest.hex",
-                                 sample_rate = 0.1,
-                                 ntrees = 1000,
+                                 sample_rate = 0.05,
+                                 mtries = base::round(sqrt(length(colnames(maindf)))),
+                                 ntrees = 100,
                                  seed= 123
-
 )
 
 predictions <- h2o.predict(isomodel, data_h2o)
@@ -153,7 +150,7 @@ isoforest_results <- as.data.frame(predictions)
 colnames(isoforest_results) <- c("Anom_Score","Mean_Length")
 
 # Bootstrap quantile estimation
-contamination.factor <- 0.9
+contamination.factor <- 0.95
 
 n = length(isoforest_results$Anom_Score)/2
 B = 10000
@@ -163,9 +160,15 @@ for (i in 1:B) {
   boot_result[i] = quantile(isoforest_results$Anom_Score[boot.sample], contamination.factor)
 }
 
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
 thresh<-median(boot_result)
 
 isoforest_results$predicted_label  <- as.factor(ifelse(isoforest_results$Anom_Score >= thresh, "FAIL", "PASS"))
+
 isoforest_results$true_label <- maindf$RESPONSE
 # isoforest_result <- as.data.frame(data_h2o)
 # plotting mean length and score hists
@@ -173,11 +176,10 @@ hist(as.vector(predictions$mean_length))
 qplot(isoforest_results$Anom_Score, geom="density") 
 
 #appending output to input df 
-isoforest_results
-
-
+# isoforest_results
 
 table(isoforest_results$true_label, isoforest_results$predicted_label)
+
 
 ```
 
@@ -215,14 +217,21 @@ pass <-  input_df[input_df$RESPONSE == "PASS",]
 
 fail <-  input_df[input_df$RESPONSE == "FAIL",]
 
-maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1)) %>% dplyr::select(-peptide)
+maindf <- rbind(sample_frac(pass,0.95),sample_frac(fail,0.05)) %>% select(-peptide)
 
+# testdf <- input_df[-maindf$X,]
+# input_df <- read.csv("~/Desktop/GitHub/MSstatsQCgui_v2.0/isolationforest/test_maindf.csv")
+
+
+# maindf <-  input_df[2:6]
+# write.csv(maindf,'solitude_test_1000.csv')
+# maindf <- rbind(pass[1:950,],tail(fail,50)) %>% dplyr::select(-peptide)
 
 iso <- isolationForest$new(
-                           num_trees = 1000,
-                           sample_size = nrow(maindf)*0.8,
-                           replace = F,
-                           mtry = base::round(sqrt(length(colnames(maindf)))),
+                           num_trees = 100,
+                           sample_size = base::round(nrow(maindf)*0.05 + 2),
+                           replace = T,
+                           mtry = (length(colnames(maindf[,1:4]))),
                            seed = 123
                            )
 
@@ -237,10 +246,10 @@ iso$fit(maindf[,1:4])
 results <- iso$predict(maindf[,1:4])
 
 # quantiles of anomaly scores
-contamination.factor<-0.90
-q<-quantile(results$anomaly_score[1:900],
-            probs = seq(contamination.factor,
-                        contamination.factor, length.out = 1))
+contamination.factor<-0.95
+# q<-quantile(results$anomaly_score[1:900],
+#             probs = seq(contamination.factor,
+#                         contamination.factor, length.out = 1))
 
 #2. way of calculating q based on bootstrap
 n = length(results$anomaly_score)/2
@@ -253,14 +262,44 @@ for (i in 1:B) {
 
 thresh<-median(boot_result)
 
-outlier<-as.factor(ifelse(results$anomaly_score >= thresh, "FAIL", "PASS"))
+outlier<-as.factor(ifelse(results$anomaly_score > thresh, "FAIL", "PASS"))
 results<-cbind(results, outlier, RESPONSE=maindf$RESPONSE)
 
 table(results$RESPONSE, results$outlier)
+
+res2 <- iso$predict(testdf[2:5])
+
+
+outlier<-as.factor(ifelse(res2$anomaly_score > thresh, "FAIL", "PASS"))
+res2<-cbind(res2, outlier, RESPONSE=testdf$RESPONSE)
+
+table(res2$RESPONSE, res2$outlier)
+
+# 2-d Plots 
+pch <- rep(".", length(maindf$RESPONSE))
+
+pch[results$outlier == "FAIL"] <- "+"
+
+col <- rep("black", length(maindf$RESPONSE))
+
+col[results$outlier == "FAIL"] <- "red"
+
+labels <- rep(".", length(maindf$RESPONSE))
+
+labels[results$outlier == "FAIL"] <- "X"
+
+sum(labels != '.')
+
+pairs(maindf[1:4], pch=pch, col=col)
+
+biplot(prcomp(maindf[1:4],scale. = T,center = T), cex=.8, xlabs=labels)
+
+
 ```
 
 # PCA plot Fucntion
 ```{r}
+library(plotly)
 plot_pca <- function(data){
     
     # Assumes all numeric cols with anomaly score col last
@@ -270,13 +309,11 @@ plot_pca <- function(data){
     x <- as.vector(pca[["x"]][,1])
     y <- as.vector(pca[["x"]][,2])
     z <- as.vector(pca[["x"]][,3])
-    anom <- as.vector(data[,ncol(data)])
+    
+    anom <- base::as.vector(data[,length(data)])
     pca_df <-  as.data.frame(cbind(x,y,z,anom))
     
-    conf <-  0.9
-    thresh <-  quantile(pca_df$anom,conf)
-    
-    pca_df <- pca_df %>% mutate(anom = if_else(anom > thresh, 'Anomaly', 'Normal') )
+    pca_df <- pca_df %>% mutate(anom = if_else(anom == "FAIL", 'Anomaly', 'Normal') )
     fig <- plot_ly(pca_df, x = ~x, y = ~y, z = ~z, color = ~anom, colors = c('#BF382A', '#0C4B8E'))
     fig <- fig %>% add_markers()
     fig <- fig %>% layout(scene = list(xaxis = list(title = paste('PC1 ', pcainfo$importance[2]*100,"%")),
@@ -286,22 +323,63 @@ plot_pca <- function(data){
     fig
 }
 
-x <- cbind(maindf[1:4],results$anomaly_score)
-plot_pca(x)
+anom_df <- cbind(maindf[1:4],results$outlier)
+plot_pca(anom_df)
 ```
 
+
+```{r}
+# Load rpart and rpart.plot
+library(rpart)
+library(rpart.plot)
+# Create a decision tree model
+Anomaly <- as.vector(results$outlier)
+rpart.df <- cbind(maindf[1:4],Anomaly)
+tree <- rpart(Anomaly~., data=rpart.df, method="class")
+# Visualize the decision tree with rpart.plot
+rpart.plot(tree, box.palette="RdGn", shadow.col="gray", nn=TRUE, clip.right.labs = FALSE, branch = .3, under = TRUE)
+rpart.plot(tree, box.palette="RdGn", shadow.col="gray", nn=TRUE)
+
+TREE_RULES <- rpart.rules(tree,extra = 4, cover = TRUE)
+
+levels(rpart.df$Anomaly)
+
+
+library(shiny)
+library(visNetwork)
+
+
+visTree(tree, main = "Classification Tree", width = "100%")
+      
+# shiny::runApp(system.file("shiny", package = "visNetwork"))
+
+```
+
+```{r}
+library(party)
+fit <- ctree(Anomaly~., data=rpart.df)
+plot(fit, main="Conditional Inference Tree for Kyphosis")
+
+```
 ## Plotting a single decision tree fitted on data given my isoforest.
 
 ```{r}
+library(h2o)
 
-print(data_h2o)
+h2o.init()
 
-anomaly_classificationtree = h2o.randomForest(x = c(1:5), y = 9, 
-                        training_frame = data_h2o,
+h2o_anom_df <- as.h2o(anom_df)
+cols <- length(h2o_anom_df)
+
+anomaly_classificationtree = h2o.randomForest(x = c(1:cols-1), y = cols,
+                        training_frame = h2o_anom_df,
                         ntrees = 1, min_rows = 1, sample_rate = 1,            
-                        max_depth = 5,
-                        seed = 1)
+                        max_depth = 4,
+                        seed = 1, mtries = length(h2o_anom_df)-1)
 
+
+
+dfH2oTree = h2o.getModelTree(model = anomaly_classificationtree, tree_number = 1)
 
 dfTree = createDataTree(dfH2oTree)
 
@@ -328,6 +406,61 @@ plot(dfTree, output = "graph")
 
 
 ## Testing stuff
+```{r}
+library(pROC)
+
+x <- as.vector(results$outlier) 
+y <- as.vector(results$RESPONSE)
+
+x <- if_else(x == "PASS", 0,1)
+y <- if_else(y == "PASS", 0,1)
+
+# pred <- prediction(results$outlier, results$RESPONSE)
+# perf <- performance(pred,"tpr","fpr")
+# plot(perf,colorize=TRUE)
+
+pROC_obj <- roc(x, y,
+            smoothed = TRUE,
+            # arguments for ci
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+
+
+sens.ci <- ci.se(pROC_obj)
+plot(sens.ci, type="shape", col="lightblue")
+## Warning in plot.ci.se(sens.ci, type = "shape", col = "lightblue"): Low
+## definition shape.
+plot(sens.ci, type="bars")
+
+```
+
+```{r}
+
+# Train deep autoencoder learning model on "normal" 
+# training data, y ignored 
+anomaly_model <- h2o.deeplearning(
+ x = 1:4, 
+ training_frame = data_h2o, 
+ activation = "Tanh", 
+ autoencoder = TRUE, 
+ hidden = c(50,20,50), 
+ sparse = TRUE,
+ l1 = 1e-4, 
+ epochs = 100)
+
+# Compute reconstruction error with the Anomaly 
+# detection app (MSE between output and input layers)
+recon_error <- h2o.anomaly(anomaly_model, data_h2o)
+
+# Pull reconstruction error data into R and 
+# plot to find outliers (last 3 heartbeats)
+recon_error <- as.data.frame(recon_error)
+recon_error
+plot.ts(recon_error)
+
+```
 
 ```{r}
 library(PCAtools)

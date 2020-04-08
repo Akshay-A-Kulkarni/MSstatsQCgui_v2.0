@@ -3,15 +3,16 @@ mod1_server <- function(input, output, session) {
   
   
   data <- reactiveValues(df = NULL, plot = NULL, cf = NULL )
-  
-  h2o.init(max_mem_size = "1g", nthreads = -1 )
-  h2o.removeAll()
-  
+
   observeEvent(input$jumpToP2, {
     updateTabsetPanel(session, "inTabset",
                       selected = "panel2")
-  },priority = 30)
-  
+  },priority = 40)
+  # 
+  # observeEvent(input$go, {
+  #   updateTabsetPanel(session, "inPlotSet",
+  #                     selected = "pcaplottab")
+  # },priority = 30)
   
   observeEvent(input$anomalyfilein, {
     
@@ -41,7 +42,7 @@ mod1_server <- function(input, output, session) {
     data$df <- NULL
     data$plot <- NULL
     waitress <- NULL
-  }, priority = 20)
+  }, priority = 30)
   
   
   output$table <- DT::renderDataTable(DT::datatable({
@@ -59,41 +60,87 @@ mod1_server <- function(input, output, session) {
                   )
   ))
   
+  output$pairplot <- renderPlot({
+    req(data$df)
+    req(input$lb)
+    req(input$ub)
+    
+    data_in <- data$df
+    pch <- rep(".", length(data_in[input$lb]))
+    col <- rep("blue", length(data_in[input$lb]))
+    
+    if (!is.null(data$plot)){
+      pch <- if_else(data_in$anom == "Anomaly", "X", "." )
+      col <- if_else(data_in$anom == "Anomaly", "red", "blue" )
+      }
+    
+    pairs(data_in[input$lb:input$ub], pch=pch, col=col)
+  })
   
   fetchplot <- observeEvent(input$go, {
     req(data$df)
+    updateTabsetPanel(session, "inPlotSet",
+                      selected = "pcaplottab")
+    waitress <- Waitress$new("#inPlotSet", theme = "overlay-percent")
+    for(i in 1:10){
+      waitress$inc(10) # increase by 10%
+      Sys.sleep(.5)
+    }
     data$plot <- get_anomaly_plot(data$df)
-  })
+    waitress$close() # hide when done
+  }, priority = 10)
   
   output$plot <- renderPlotly({
     req(data$plot)
     fig <- data$plot
     fig
   })
-  
+
+  output$tree <- renderVisNetwork({
+    # minimal example
+    req(data$plot)
+    data_in <- data$df
+    Anomaly <- as.vector(data_in$anom)
+    input_df <- cbind(data_in[input$lb:input$ub],Anomaly)
+    tree <- rpart(Anomaly~., data=input_df, method="class")
+
+    visTree(tree, main = "Classification Tree", width = "100%")
+  })
+
   
   get_anomaly_plot <- function(df_input){
-    waitress <- Waitress$new("#plot", theme = "overlay-percent") 
+    # waitress <- Waitress$new("#loadpca", theme = "overlay-percent") 
     metrics <- length(colnames(df_input))
     df_input <- df_input[input$lb:input$ub]
     # df_input <- df_input %>% mutate_at(1:metrics-1, ~(scale(., center = T) %>% as.vector))
-
-    data_h2o <- as.h2o(df_input,destination_frame = "data_h2o")
+    # for(i in 1:10){
+    #   waitress$inc(10) # increase by 10%
+    #   Sys.sleep(.5)
+    # }
     
     
-    for(i in 1:10){
-      waitress$inc(10) # increase by 10%
-      Sys.sleep(.5)
+    model <- isolationForest$new(
+      num_trees = 100,
+      sample_size = base::round(nrow(df_input)*0.05 + 2),
+      replace = T,
+      mtry = (length(colnames(df_input))),
+      seed = 123
+    )
+    
+    model$fit(df_input)
+  
+    predictions <-  model$predict(df_input)
+    conf <-  1-input$cf
+    
+    n = length(predictions$anomaly_score)/2
+    B = 10000
+    boot_result = rep(NA, B)
+    for (i in 1:B) {
+      boot.sample = sample(n, replace = TRUE)
+      boot_result[i] = quantile(predictions$anomaly_score[boot.sample], conf)
     }
     
-    model <- h2o.isolationForest(training_frame=data_h2o,
-                                 model_id = "isolation_forest.hex",
-                                 ntrees = 100,
-                                 seed= 12345)
-  
-    predictions <- h2o.predict(model, data_h2o)
-    conf <-  1-input$cf
-    thresh <-  h2o.quantile(predictions$predict,conf)
+    thresh<-median(boot_result)
 
     pca <- prcomp(df_input, scale. = T , center = T)
     pcainfo <-  summary(pca)
@@ -101,7 +148,7 @@ mod1_server <- function(input, output, session) {
     x <- as.vector(pca[["x"]][,1])
     y <- as.vector(pca[["x"]][,2])
     z <- as.vector(pca[["x"]][,3])
-    anom <- as.vector(predictions$predict)
+    anom <- as.vector(predictions$anomaly_score)
     
     pca_df <-  as.data.frame(cbind(x,y,z,anom))
     
@@ -118,17 +165,8 @@ mod1_server <- function(input, output, session) {
     df_input$anom <- pca_df$anom
     data$df <- df_input
     
-    
-    waitress$close() # hide when done
+    # waitress$close() # hide when done
     fig
-
   }
-  
-  
-  
-  # session$onSessionEnded(function() {
-  #   h2o.shutdown(prompt = FALSE)
-  #   stopApp()
-  # })
   
 }
