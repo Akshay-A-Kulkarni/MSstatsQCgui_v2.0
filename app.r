@@ -6,7 +6,6 @@ library(shinyBS)
 library(shinyjs)
 library(shinyWidgets)
 library(waiter)
-library(pushbar)
 library(bsplus)
 library(htmltools)
 #####################################
