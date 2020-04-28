@@ -75,15 +75,14 @@ mod1_ui <-fluidPage(
                                           column(3,fileInput("anomalyfilein", label= p(strong("Upload Dataset")), accept = c(".csv"))),
                                           column(2,numericInput("lb", div("Starting Col Idx:", style="padding-bottom:6%;"),1, min = 1)),
                                           column(2,numericInput("ub", div("Ending Col Idx:", style="padding-bottom:6%;"), 2,min = 1)),
-                                          column(2,numericInput("cf", "Contamination Factor:",min = 0, max = 1,value = 0.05)),
-                                          column(3,div(style="padding-top:6%;",
+                                          column(3,numericInput("cf", "Contamination Factor:",min = 0, max = 1,value = 0.05)),
+                                          column(2,div(
                                                        actionGroupButtons(
-                                                          c("go", "clear_button"),
-                                                          c("Plot!", "Clear Data"),
+                                                          c("go", "clear_button", "report"),
+                                                          c("Plot!", "Clear Data", "Generate report"),
                                                           status = "default",
                                                           size = "normal",
-                                                          direction = "horizontal",
-                                                          fullwidth = TRUE
+                                                          direction = "vertical",
                                           )))
                                         ))
                                 )

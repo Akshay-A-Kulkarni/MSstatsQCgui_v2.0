@@ -2,7 +2,7 @@
 mod1_server <- function(input, output, session) {
   
   
-  data <- reactiveValues(df = NULL, plot = NULL, cf = NULL, tree_obj= NULL, rule_table= NULL )
+  data <- reactiveValues(df = NULL, pairplot = NULL , plot = NULL, cf = NULL, tree_obj= NULL, rule_table= NULL )
 
   observeEvent(input$jumpToP2, {
     updateTabsetPanel(session, "inTabset",
@@ -88,7 +88,8 @@ mod1_server <- function(input, output, session) {
       col <- if_else(data_in$anom == "Anomaly", "red", "blue" )
       }
     
-    pairs(data_in[input$lb:input$ub], pch=pch, col=col)
+    data$pairplot <- pairs(data_in[input$lb:input$ub], pch=pch, col=col)
+    data$pairplot
   })
   
   fetchplot <- observeEvent(input$go, {
@@ -135,16 +136,11 @@ mod1_server <- function(input, output, session) {
   }
   
   get_anomaly_plot <- function(df_input){
-    # waitress <- Waitress$new("#loadpca", theme = "overlay-percent") 
-    metrics <- length(colnames(df_input))
+    
+    # Subscripting input based on given indices
     df_input <- df_input[input$lb:input$ub]
-    # df_input <- df_input %>% mutate_at(1:metrics-1, ~(scale(., center = T) %>% as.vector))
-    # for(i in 1:10){
-    #   waitress$inc(10) # increase by 10%
-    #   Sys.sleep(.5)
-    # }
     
-    
+    #Initialising IF model
     model <- isolationForest$new(
       num_trees = 100,
       sample_size = base::round(nrow(df_input)*0.05 + 2),
@@ -153,11 +149,14 @@ mod1_server <- function(input, output, session) {
       seed = 123
     )
     
+    # fitting on input 
     model$fit(df_input)
   
+    # Extracting Predictons 
     predictions <-  model$predict(df_input)
     conf <-  1-input$cf
     
+    #A scertaining a threshold via boostrap
     n = length(predictions$anomaly_score)/2
     B = 10000
     boot_result = rep(NA, B)
@@ -168,6 +167,7 @@ mod1_server <- function(input, output, session) {
     
     thresh<-median(boot_result)
 
+    # Getting Principal Components
     pca <- prcomp(df_input, scale. = T , center = T)
     pcainfo <-  summary(pca)
 
@@ -178,6 +178,7 @@ mod1_server <- function(input, output, session) {
     
     pca_df <-  as.data.frame(cbind(x,y,z,anom))
     
+    # Ploting 3d Plot
     pca_df <- pca_df %>% mutate(anom = if_else(anom > thresh, 'Anomaly', 'Normal') )
   
     fig <- plot_ly(pca_df, x = ~x, y = ~y, z = ~z, color = ~anom, colors = c('#BF382A', '#0C4B8E'))
@@ -191,8 +192,34 @@ mod1_server <- function(input, output, session) {
     df_input$anom <- pca_df$anom
     data$df <- df_input
     
-    # waitress$close() # hide when done
     fig
   }
   
+  output$report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    filename = "report.html",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions.
+      
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(
+                     pair_plot = data$pairplot,
+                     plotly_fig = data$plot,
+                     tree_plot = data$tree_obj,
+                     rule_table = data$rule_table
+                     )
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
 }

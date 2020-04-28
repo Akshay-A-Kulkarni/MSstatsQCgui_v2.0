@@ -8,11 +8,12 @@
   #print(peptide)
   
   #generate in-control observations
-  source("src/sample_density_function.R")
-  source("src/auto_add_features.R")
-  source("src/robust_scaling.R")
+  source("sample_density_function.R")
+  source("auto_add_features.R")
+  source("robust_scaling.R")
   
-  beta= 3
+  betaVal <- 3
+  beta = betaVal 
   sim.size=1000
   
   sample_density_sim <- function(guide.set, peptide, n){
@@ -71,10 +72,10 @@
     sample_data <- sample_density_sim(guide.set,guide.set$peptide[j], sim.size)
     for(i in 1:sim.size){
       Data<-rbind(Data,c((i+sim.size),rep(levels(guide.set$peptide)[j],1),
-                         sample_data[i,1]+ beta*mad(sample_data[,1]),
-                         sample_data[i,2]+ beta*mad(sample_data[,2]),
-                         sample_data[i,3]- beta1[sim.size-i+1]*mad(sample_data[,3]),
-                         sample_data[i,4]+beta*mad(sample_data[,4])))
+                         sample_data[i,1] + beta*mad(sample_data[,1]),
+                         sample_data[i,2] + beta*mad(sample_data[,2]),
+                         sample_data[i,3] - beta1[sim.size-i+1]*mad(sample_data[,3]),
+                         sample_data[i,4] + beta*mad(sample_data[,4])))
     }
     Data<- as.data.frame(Data,stringsAsFactor = F)
     colnames(Data)<-c("idfile", "peptide", colnames(sample_data))
@@ -92,9 +93,9 @@
     for(i in 1:sim.size){
       Data<-rbind(Data,c((i+sim.size),rep(levels(guide.set$peptide)[j],1),
                          sample_data[i,1]+beta[i]*mad(sample_data[,1]),
-                         sample_data[i,2],
-                         sample_data[i,3],
-                         sample_data[i,4]))
+                         sample_data[i,2]+beta[i]*mad(sample_data[,2]),
+                         sample_data[i,3]+beta[i]*mad(sample_data[,3]),
+                         sample_data[i,4]+beta[i]*mad(sample_data[,4])))
     }
     Data<- as.data.frame(Data,stringsAsFactor = F)
     colnames(Data)<-c("idfile", "peptide", colnames(sample_data))
@@ -112,9 +113,9 @@
     for(i in 1:sim.size){
       Data<-rbind(Data,c((i+sim.size),rep(levels(guide.set$peptide)[j],1),
                          sample_data[i,1]-beta[sim.size-i+1]*mad(sample_data[,1]),
-                         sample_data[i,2],
+                         sample_data[i,2]-beta[sim.size-i+1]*mad(sample_data[,2]),
                          sample_data[i,3]-beta[sim.size-i+1]*mad(sample_data[,3]),
-                         sample_data[i,4]))
+                         sample_data[i,4]-beta[sim.size-i+1]*mad(sample_data[,4])))
     }
     # for(i in 15:20){
     #   Data<-rbind(Data,c((i+sim.size),rep(levels(guide.set$peptide)[j],1),

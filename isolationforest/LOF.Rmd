@@ -3,8 +3,6 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-
-
 ```{r}
 
 library(DMwR)
@@ -42,7 +40,52 @@ maindf$lof_score <- outlier.scores
 
 table(maindf$RESPONSE, maindf$Predicted)
 
-tn <- nrow(maindf)
+
+
+```
+
+```{r}
+library(Rlof)
+
+input_rawdf <- read.csv("simData_delta7.csv")
+
+input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK") %>% dplyr::select(3:7)
+
+pass <-  input_df[input_df$RESPONSE == "PASS",]
+
+fail <-  input_df[input_df$RESPONSE == "FAIL",]
+
+maindf <- rbind(sample_frac(pass,0.9),sample_frac(fail,0.1))
+
+
+# scale all numeric cols
+num_cols <- colnames(dplyr::select_if(maindf, is.numeric))
+maindf <- maindf %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+
+# try with different number of neighbors (k = 5,6,7,8,9 and 10)
+outlier.scores <- Rlof::lof(maindf[1:4], k=c(5:10))
+
+ 
+thr <-  quantile(outlier.scores, .9)
+out_index = if_else(outlier.scores >= thr, "X" ,".")
+
+col <-if_else(out_index == ".", "red" ,"blue")
+
+test$anom <-  out_index
+
+print(out_index)
+print(test[out_index,])
+   
+test.pca <- prcomp(test[1:4], scale. = T, center = T)
+
+summary(test.pca)
+
+biplot(test.pca, cex=.8, xlabs=out_index)
+pairs(maindf[1:4], pch=out_index, col=col)
+
+
+n <- nrow(maindf)
 
 labels <- 1:n
 
@@ -60,50 +103,6 @@ col <- rep("black", n)
 col[outliers] <- "red"
 
 pairs(maindf[1:4], pch=pch, col=col)
-
-```
-
-```{r}
-library(Rlof)
-outlier.scores <- lof(maindf, k=5)
-# try with different number of neighbors (k = 5,6,7,8,9 and 10)
-outlier.scores <- lof(maindf[1:4], k=c(5:10))
-
-
-library(Rlof)
- 
-set.seed(124)
- 
-test <-  input_df %>% filter(peptide == "SLHTLFGDELCK") %>% dplyr::select(c(3:7))
-
-pass <-  test[test$RESPONSE == "PASS",]
-
-fail <-  test[test$RESPONSE == "FAIL",]
-
-test <- rbind(sample_frac(pass,0.98),sample_frac(fail,0.02))
-# plot(test, col="blue", type='p', pch=19)
- 
-mlof <-  lof(maindf[1:4], k=10)
-print(mlof) 
- 
-thr <-  quantile(mlof, .9)
-out_index = if_else(mlof >= thr, "X" ,".")
-
-col <-if_else(out_index == ".", "red" ,"blue")
-
-test$anom <-  out_index
-
-print(out_index)
-print(test[out_index,])
-   
-test.pca <- prcomp(test[1:4], scale. = T, center = T)
-
-summary(test.pca)
-
-biplot(test.pca, cex=.8, xlabs=out_index)
-pairs(maindf[1:4], pch=out_index, col=col)
-
-
 ```
 
 
@@ -124,10 +123,11 @@ X=as.data.frame(X)
 names(X)=c("Latency (ms)", "Throughput (mb/s)")
 XX=melt(maindf[1])
 
- df <- melt(maindf[metric])
+df <- melt(guide.set[metric])
+guide_df <-  guide.set %>% filter(peptide == "EACFAVEGPK")
 
-for (metric in colnames(maindf[1:4])) {
-  df <- melt(maindf[metric])
+for (metric in colnames(guide_df[3:6])) {
+  df <- melt(guide_df[metric])
   
   p <- df %>%ggplot(aes(x=value,fill=variable, color=variable))+
   geom_density(alpha = 0.3)+ggtitle(paste('Distibution of', metric))
@@ -137,3 +137,67 @@ for (metric in colnames(maindf[1:4])) {
 
 
 ```
+```{r}
+
+library(DDoutlier)
+
+dir <- getwd()
+if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
+  guide.set <- read.csv("guide_set.csv")
+  setwd("..")
+  source("simulate_test_data.R")
+  setwd(dir)
+}
+
+
+input_df <- Data.set
+
+# input_df <- input_rawdf %>% filter(peptide == "SLHTLFGDELCK") %>% dplyr::select(3:7)
+
+contamination.factor<-0.95
+
+pass <-  input_df[input_df$RESPONSE == "PASS",] %>% group_by(peptide) %>% sample_frac(contamination.factor)
+
+fail <-  input_df[input_df$RESPONSE == "FAIL",] %>% group_by(peptide) %>% sample_frac(1-contamination.factor)
+
+
+# pass <- pass %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+# fail <- fail %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+fullDF <- rbind(pass,fail) %>% filter(peptide == "SLHTLFGDELCK") %>% dplyr::select(3:7)
+
+maindf <- fullDF[2:5]
+
+
+# scale all numeric cols
+num_cols <- colnames(dplyr::select_if(maindf, is.numeric))
+maindf <- maindf %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+# Find outliers by setting an optional k
+outlier_score <- LOOP(dataset=maindf, k=20, lambda=3)
+# Sort and find index for most outlying observations
+names(outlier_score) <- 1:nrow(maindf)
+sort(outlier_score, decreasing = TRUE)
+# Inspect the distribution of outlier scores
+hist(outlier_score)
+# View(outlier_score)
+
+contamination.factor = 0.95
+n = length(outlier_score)/2
+B = 10000
+boot_result = rep(NA, B)
+for (i in 1:B) {
+  boot.sample = sample(n, replace = TRUE)
+  boot_result[i] = quantile(outlier_score[boot.sample], contamination.factor)
+}
+
+thresh<-median(boot_result)
+
+outlier <- as.vector(if_else(outlier_score > thresh, 'FAIL', 'PASS'))
+response <- as.vector(if_else(fullDF$RESPONSE == "FAIL", 'FAIL', 'PASS'))
+                      
+
+table(outlier, response)
+
+```
+

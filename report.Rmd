@@ -1,0 +1,100 @@
+---
+title: "report"
+date: "4/25/2020"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+params:
+  pair_plot: NA
+  plotly_fig: NA
+  tree_plot: NA
+  rule_table: NA
+  
+---
+
+
+## Using Parametrized RMD's for Custom Report Format
+
+```{r include=FALSE}
+library(rpart)
+library(visNetwork)
+library(DT)
+
+if("prettydoc" %in% rownames(installed.packages()) == FALSE) {install.packages("prettydoc")}
+
+knitr::opts_chunk$set(fig.align="center")
+options(DT.options = list(autoWidth = TRUE, autoHeight = TRUE))
+```
+
+
+### Using Markdown to format the doc easily
+
+# **MSstatsQC Framework Report**
+
+
+
+<code>MSstatsQC</code> is an open-source R package and Shiny web application for statistical analysis and monitoring of quality control and system suitability testing (SST) samples produced by spectrometry-based proteomic experiments. Our framework termed <code>MSstatsQC</code> is available through <a href="www.msstats.org/msstatsqc">www.msstats.org/msstatsqc</a>.
+
+
+#### **Metrics and experimental workflows you can monitor**   
+
+MSstatsQC uses statistical and machine learning methods to monitor the instrument performance by tracking metrics such as total peak area, retention time and full width at half maximum (FWHM) and peak assymetry. It can import and analyze any metric of interest if they were provided based on the required input format.  
+
+MSstatsQC is available for quality control data from SRM, DDA and DIA experiments.
+
+
+#### **MSstatsQC Modules**  
+
+1. Module 1: individual experiments 
+   Module analyzes QC data where a guide set is not available and uses unsupervised learning methods (isolation forests) for anomaly detection.   
+   
+2. Module 2: longitudinal tracking
+   Module analyzes longitudinal QC data where a guide set is available and uses supervised learning methods (random forests) and statistical process control for suboptimality detection.   
+   
+3. Module 3: complex QC
+   Module analyzes longitudinal pXn reference QC samples where a guide set is available and uses supervised learning methods (random forests) and statistical process control for suboptimality detection.  
+   
+
+### Installation of MSstatsQC R/Bioconductor package
+
+To install the R/Bioconductor package version, start R and enter:
+```
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("MSstatsQC")
+```
+
+## Including Plots {PCA, TREE, RULES}
+
+We can also embed plots:
+
+### Pair Plot
+```{r, echo=FALSE}
+params$pair_plot
+```
+
+### 3D PCA
+```{r, echo=FALSE}
+params$plotly_fig
+```
+
+### Tree
+```{r, echo=FALSE}
+visTree(params$tree_plot, main = "Anomaly Classification Tree", width = "100%")
+```
+
+### Rule Table
+
+```{r echo=FALSE}
+DT::datatable({params$rule_table}
+  ,escape = F
+  ,fillContainer = T
+  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,scrollY = FALSE,
+                  rowCallback = DT::JS(sprintf('function(row, data) {
+                                          if (String(data[%s]).trim() == "Anomaly"  ){
+                                                  $("td", row).css("background", "#994141");
+                                                  $("td", row).css("color", "white");}}',toString(1)))
+  )
+  )
+
+```

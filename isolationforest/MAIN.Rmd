@@ -1,0 +1,614 @@
+---
+title: "isoforest"
+output: html_notebook
+---
+
+
+## Tree Api helper functions for visualising decision tree for analysis
+```{r}
+
+library(data.tree)
+
+createDataTree <- function(h2oTree) {
+  h2oTreeRoot = h2oTree@root_node
+  dataTree = Node$new(h2oTreeRoot@split_feature)
+  dataTree$type = 'split'
+  addChildren(dataTree, h2oTreeRoot)
+  return(dataTree)
+}
+
+addChildren <- function(dtree, node) {
+  
+  if(class(node)[1] != 'H2OSplitNode') return(TRUE)
+  
+  feature = node@split_feature
+  id = node@id
+  na_direction = node@na_direction
+  
+  if(is.na(node@threshold)) {
+    leftEdgeLabel = printValues(node@left_levels, 
+                                na_direction=='LEFT', 4)
+    rightEdgeLabel = printValues(node@right_levels, 
+                                 na_direction=='RIGHT', 4)
+  }else {
+    leftEdgeLabel = paste("<", node@threshold, 
+                          ifelse(na_direction=='LEFT',',NA',''))
+    rightEdgeLabel = paste(">=", node@threshold, 
+                           ifelse(na_direction=='RIGHT',',NA',''))
+  }
+  
+  left_node = node@left_child
+  right_node = node@right_child
+  
+  if(class(left_node)[[1]] == 'H2OLeafNode')
+    leftLabel = paste("prediction:", left_node@prediction)
+  else
+    leftLabel = left_node@split_feature
+  
+  if(class(right_node)[[1]] == 'H2OLeafNode')
+    rightLabel = paste("prediction:", right_node@prediction)
+  else
+    rightLabel = right_node@split_feature
+  
+  if(leftLabel == rightLabel) {
+    leftLabel = paste(leftLabel, "(L)")
+    rightLabel = paste(rightLabel, "(R)")
+  }
+  
+  dtreeLeft = dtree$AddChild(leftLabel)
+  dtreeLeft$edgeLabel = leftEdgeLabel
+  dtreeLeft$type = ifelse(class(left_node)[1] == 'H2OSplitNode', 'split', 'leaf')
+  
+  dtreeRight = dtree$AddChild(rightLabel)
+  dtreeRight$edgeLabel = rightEdgeLabel
+  dtreeRight$type = ifelse(class(right_node)[1] == 'H2OSplitNode', 'split', 'leaf')
+  
+  addChildren(dtreeLeft, left_node)
+  addChildren(dtreeRight, right_node)
+  
+  return(FALSE)
+}
+
+printValues <- function(values, is_na_direction, n=4) {
+  l = length(values)
+  if(l == 0)
+    value_string = ifelse(is_na_direction, "NA", "")
+  else
+    value_string = paste0(paste0(values[1:min(n,l)], collapse = ', '),
+                          ifelse(l > n, ",...", ""),
+                          ifelse(is_na_direction, ", NA", ""))
+  return(value_string)
+}
+
+```
+
+
+
+# ISOLATION FOREST h2o
+
+```{r}
+    
+library(h2o)
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(RecordLinkage)
+library(ggfortify)
+
+
+
+# h2o.shutdown(prompt = F)
+h2o.init(ip = "localhost", port = 54321, max_mem_size = "5g", nthreads = -1 )
+
+h2o.removeAll() # Removes all data from cluster.
+
+
+dir <- getwd()
+if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
+  guide.set <- read.csv("guide_set.csv")
+  setwd("..")
+  source("isolationforest/simulate_test_data.R")
+  setwd(dir)
+}
+
+input_df <- Data.set
+
+# input_df <- input_df %>% filter(peptide != "EACFAVEGPK")
+input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK")
+
+#input_df <- input_df %>% filter(peptide == "YICDNQDTISSK")
+
+input_df <- input_df[,2:7]
+
+# scale all numeric cols
+    # num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+    # input_df <- input_df %>% group_by(peptide) %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+pass <-  input_df[input_df$RESPONSE == "PASS",]
+
+fail <-  input_df[input_df$RESPONSE == "FAIL",]
+
+maindf <- rbind(sample_frac(pass,0.95),sample_frac(fail,0.05)) %>% select(-peptide)
+# maindf <- maindf %>% mutate_at(1:length(maindf)-1, ~(scale(., center = T) %>% as.vector))
+# data_h2o <- as.h2o(maindf[1:length(maindf)-1]) 
+
+data_h2o <- as.h2o(maindf, destination_frame = "data_h2o") 
+
+end <- length(data_h2o) - 1
+    
+isomodel <- h2o.isolationForest(training_frame=data_h2o[1:end],
+                                 model_id = "isolation_forest.hex",
+                                 sample_rate = 0.05,
+                                 mtries = base::round(sqrt(length(colnames(maindf)))),
+                                 ntrees = 100,
+                                 seed= 123
+)
+
+predictions <- h2o.predict(isomodel, data_h2o)
+
+isoforest_results <- as.data.frame(predictions)
+colnames(isoforest_results) <- c("Anom_Score","Mean_Length")
+
+# Bootstrap quantile estimation
+contamination.factor <- 0.95
+
+n = length(isoforest_results$Anom_Score)/2
+B = 10000
+boot_result = rep(NA, B)
+for (i in 1:B) {
+  boot.sample = sample(n, replace = TRUE)
+  boot_result[i] = quantile(isoforest_results$Anom_Score[boot.sample], contamination.factor)
+}
+
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+thresh<-median(boot_result)
+
+isoforest_results$predicted_label  <- as.factor(ifelse(isoforest_results$Anom_Score >= thresh, "FAIL", "PASS"))
+
+isoforest_results$true_label <- maindf$RESPONSE
+# isoforest_result <- as.data.frame(data_h2o)
+# plotting mean length and score hists
+hist(as.vector(predictions$mean_length))
+qplot(isoforest_results$Anom_Score, geom="density") 
+
+#appending output to input df 
+# isoforest_results
+
+table(isoforest_results$true_label, isoforest_results$predicted_label)
+
+
+```
+
+# PCA plot Function
+```{r}
+library(plotly)
+plot_pca <- function(data){
+    
+    # Assumes all numeric cols with anomaly score col last
+    num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+    pca <- prcomp(data[c(num_cols)], scale. = T , center = T)
+    pcainfo <-  summary(pca)
+    x <- as.vector(pca[["x"]][,1])
+    y <- as.vector(pca[["x"]][,2])
+    z <- as.vector(pca[["x"]][,3])
+    
+    anom <- base::as.vector(data[,length(data)])
+    pca_df <-  as.data.frame(cbind(x,y,z,anom))
+    
+    pca_df <- pca_df %>% mutate(anom = if_else(anom == "FAIL", 'Anomaly', 'Normal') )
+    fig <- plot_ly(pca_df, x = ~x, y = ~y, z = ~z, color = ~anom, colors = c('#BF382A', '#0C4B8E'))
+    fig <- fig %>% add_markers()
+    fig <- fig %>% layout(scene = list(xaxis = list(title = paste('PC1 ', pcainfo$importance[2]*100,"%")),
+                                       yaxis = list(title = paste('PC2 ', pcainfo$importance[5]*100,"%")),
+                                       zaxis = list(title = paste('PC3 ', pcainfo$importance[8]*100,"%"))))
+    
+    fig
+}
+
+anom_df <- cbind(maindf[1:4],results$outlier)
+plot_pca(anom_df)
+```
+
+
+# LOF
+
+```{r}
+library(DDoutlier)
+
+#Sanity check beta val
+print(betaVal)
+
+# utility dir func (moved necessary dependancies in src folder in root of repo)
+# dir <- getwd()
+# if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
+#   guide.set <- read.csv("guide_set.csv")
+#   setwd("..")
+#   source("isolationforest/simulate_test_data.R")
+#   setwd(dir)
+# }
+
+#You need to first run simulation code to create a Data.set
+raw_df <- Data.set
+
+peps <- levels(raw_df$peptide)[6]
+
+raw_df <- raw_df[,2:7] %>% filter(peptide %in% peps)
+
+# scale all numeric cols
+# num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+# input_df <- input_df %>% group_by(peptide)%>% 
+#                           mutate_at(num_cols, ~(scale(., center = T) %>% as.vector)) 
+
+contamination.factor <- 0.95
+
+pass <-  raw_df[raw_df$RESPONSE == "PASS",] %>% group_by(peptide) %>% sample_frac(contamination.factor)
+
+fail <-  raw_df[raw_df$RESPONSE == "FAIL",] %>% group_by(peptide) %>% sample_frac(1-contamination.factor)
+
+cols <- c("RT","TotalArea","MassAccu", "FWHM")
+
+input_df <- rbind(pass,fail) 
+
+maindf <- input_df[cols]
+
+
+# scale all numeric cols
+num_cols <- colnames(dplyr::select_if(maindf, is.numeric))
+maindf <- maindf %>% mutate_at(num_cols, ~(scale(., center = T) %>% as.vector))
+
+# Find outliers by setting an optional k
+outlier_score <- LOOP(dataset=maindf, k=15, lambda=3)
+# Sort and find index for most outlying observations
+names(outlier_score) <- 1:nrow(maindf)
+sort(outlier_score, decreasing = TRUE)
+# Inspect the distribution of outlier scores
+hist(outlier_score)
+# View(outlier_score)
+
+contamination.factor = 0.95
+n = length(outlier_score)/2
+B = 10000
+boot_result = rep(NA, B)
+for (i in 1:B) {
+  boot.sample = sample(n, replace = TRUE)
+  boot_result[i] = quantile(outlier_score[boot.sample], contamination.factor)
+}
+
+thresh<-median(boot_result)
+
+outlier <- as.vector(if_else(outlier_score > thresh, 'FAIL', 'PASS'))
+response <- as.vector(if_else(fullDF$RESPONSE == "FAIL", 'FAIL', 'PASS'))
+                      
+
+table(outlier, response)
+
+```
+
+
+
+# SOLITUDE Isolation Forest
+```{r}
+library(solitude)
+library(dplyr)
+library(pROC)
+
+guide.set <- read.csv("guide_set.csv")
+source("simulate_test_data.R")
+
+#Sanity check beta val
+print(betaVal)
+
+# utility dir func (moved necessary dependancies in src folder in root of repo)
+# dir <- getwd()
+# if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
+#   guide.set <- read.csv("guide_set.csv")
+#   setwd("..")
+#   source("isolationforest/simulate_test_data.R")
+#   setwd(dir)
+# }
+
+#You need to first run simulation code to create a Data.set
+raw_df <- Data.set
+
+peps <- levels(raw_df$peptide)[6]
+
+raw_df <- raw_df[,2:7] %>% filter(peptide %in% peps)
+
+# scale all numeric cols
+# num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
+# input_df <- input_df %>% group_by(peptide)%>% 
+#                           mutate_at(num_cols, ~(scale(., center = T) %>% as.vector)) 
+
+    
+contamination.factor <- 0.95
+
+pass <-  raw_df[raw_df$RESPONSE == "PASS",] %>% group_by(peptide) %>% sample_frac(contamination.factor)
+
+fail <-  raw_df[raw_df$RESPONSE == "FAIL",] %>% group_by(peptide) %>% sample_frac(1-contamination.factor)
+
+cols <- c("RT","TotalArea","MassAccu", "FWHM")
+
+input_df <- rbind(pass,fail) 
+
+
+iso <- isolationForest$new(
+                           num_trees = 100,
+                           sample_size = base::round(nrow(input_df)*0.1 + 2),
+                           replace = T,
+                           mtry = base::round(sqrt(length(input_df))),
+                           seed = 123
+                           )
+
+# fit for data
+iso$fit(input_df[cols])
+
+# obtain Scores
+results <- iso$predict(input_df[cols])
+
+# Calculating q based on bootstrap
+n = length(results$anomaly_score)/2
+B = 10000
+boot_result = rep(NA, B)
+for (i in 1:B) {
+  boot.sample = sample(n, replace = TRUE)
+  boot_result[i] = quantile(results$anomaly_score[boot.sample], contamination.factor)
+}
+
+thresh<-median(boot_result)
+
+RESPONSE <- as.vector(input_df$RESPONSE)
+outlier <- as.vector(ifelse(results$anomaly_score > thresh, "FAIL", "PASS"))
+table(outlier,RESPONSE)
+
+```
+
+
+```{r}
+# ROC Curve    
+
+roc_iso <- roc(response = input_df$RESPONSE,
+            predictor = results$anomaly_score, percent=TRUE,
+            # arguments for ci
+            ci=TRUE, boot.n=100, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+
+
+# -------------------------------------------------------------------------------------------------
+# PR Curve
+
+install.packages("PRROC", dependencies = T)
+
+require(PRROC)
+
+scores = as.vector(results$anomaly_score)
+positive_class <- scores[input_df$RESPONSE == 'FAIL']
+negative_class <- scores[input_df$RESPONSE == 'PASS']
+
+pr <- pr.curve(scores.class0 = positive_class, scores.class1 = negative_class, curve = T)
+plot(pr)
+
+```
+
+```{r}
+
+# 2-d Plots 
+pch <- rep(".", length(input_df$RESPONSE))
+
+pch[outlier == "FAIL"] <- "x"
+
+col <- rep("black", length(input_df$RESPONSE))
+
+col[outlier == "FAIL"] <- "red"
+
+sum(labels != '.')
+
+pairs(maindf[1:4], pch=pch, col=col)
+
+biplot(prcomp(input_df[cols],scale. = T,center = T), cex=.8, xlabs=pch)
+
+
+```
+
+## Plotting ROC's
+```{r}
+library(pROC)
+
+rocobj1 <- plot.roc(RESPONSE, results$anomaly_score,
+                    main="ROC comparison",
+                    percent=TRUE,
+                    col="#1c61b6")
+rocobj2 <- lines.roc(response, outlier_score, 
+                     percent=TRUE, 
+                     col="#008600")
+testobj <- roc.test(rocobj1, rocobj2)
+legend("bottomright", legend=c("Isolation Forest", "LoOP"), col=c("#1c61b6", "#008600"), lwd=2)
+```
+
+## Plotting a single decision tree fitted on data given by isoforest.
+
+```{r}
+# Load rpart and rpart.plot
+library(rpart)
+library(rpart.plot)
+# Create a decision tree model
+Anomaly <- as.vector(results$outlier)
+rpart.df <- cbind(maindf[1:4],Anomaly)
+tree <- rpart(Anomaly~., data=rpart.df, method="class")
+# Visualize the decision tree with rpart.plot
+rpart.plot(tree, box.palette="RdGn", shadow.col="gray", nn=TRUE, clip.right.labs = FALSE, branch = .3, under = TRUE)
+rpart.plot(tree, box.palette="RdGn", shadow.col="gray", nn=TRUE)
+
+TREE_RULES <- rpart.rules(tree,extra = 4, cover = TRUE, roundint = F)
+
+levels(rpart.df$Anomaly)
+
+
+library(shiny)
+library(visNetwork)
+
+
+visTree(tree, main = "Classification Tree", width = "100%")
+
+```
+
+
+## Rule Extraction
+```{r}
+test <- as.data.frame(TREE_RULES)
+x <- colnames(test)
+colnames(newtest) <- c("Response Col","Probabilty",seq(3,length(newtest)-1),"% of Total Obs.")
+newtest
+
+rules <- unite(newtest, 'Conditions/Rules',4:length(newtest)-1, sep = ' ', remove = TRUE)
+
+rules$`% of Total Obs.`
+
+```
+
+
+# Testing stuff
+```{r}
+
+library(h2o)
+
+h2o.init()
+
+h2o_anom_df <- as.h2o(anom_df)
+cols <- length(h2o_anom_df)
+
+anomaly_classificationtree = h2o.randomForest(x = c(1:cols-1), y = cols,
+                        training_frame = h2o_anom_df,
+                        ntrees = 1, min_rows = 1, sample_rate = 1,            
+                        max_depth = 4,
+                        seed = 1, mtries = length(h2o_anom_df)-1)
+
+
+
+dfH2oTree = h2o.getModelTree(model = anomaly_classificationtree, tree_number = 1)
+
+dfTree = createDataTree(dfH2oTree)
+
+GetEdgeLabel <- function(node) {return (node$edgeLabel)}
+GetNodeShape <- function(node) {switch(node$type, 
+                                       split = "diamond", leaf = "oval")}
+GetFontName <- function(node) {switch(node$type, 
+                                      split = 'Palatino-bold', 
+                                      leaf = 'Palatino')}
+SetEdgeStyle(dfTree, fontname = 'Palatino-italic', 
+             label = GetEdgeLabel, labelfloat = TRUE,
+             fontsize = "26", fontcolor='royalblue4')
+SetNodeStyle(dfTree, fontname = GetFontName, shape = GetNodeShape, 
+             fontsize = "26", fontcolor='royalblue4',
+             height="0.75", width="1")
+
+SetGraphStyle(dfTree, rankdir = "UD", dpi=70.)
+
+plot(dfTree, output = "graph")
+
+library(pROC)
+
+x <- as.vector(results$anomaly_score) 
+y <- as.vector(results$RESPONSE)
+
+x <- if_else(x == "PASS", 0,1)
+y <- if_else(y == "PASS", 0,1)
+
+# pred <- prediction(results$outlier, results$RESPONSE)
+# perf <- performance(pred,"tpr","fpr")
+# plot(perf,colorize=TRUE)
+
+pROC_obj <- roc(RESPONSE,scores,
+            smoothed = TRUE,
+            # arguments for ci
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+
+sens.ci <- ci.se(pROC_obj)
+# plot(sens.ci, type="shape", col="lightblue")
+## Warning in plot.ci.se(sens.ci, type = "shape", col = "lightblue"): Low
+## definition shape.
+plot(sens.ci)
+plot(roc(RESPONSE ~ scores, aSAH, smooth=TRUE))
+
+
+
+
+
+
+data(aSAH)
+# Basic example
+scores <- as.vector(results$anomaly_score)
+test <- roc(RESPONSE,scores, 
+levels=c("FAIL", "PASS"))
+
+plot(test)
+View(RESPONSE)
+
+roc1 <- roc(response = fullDF$RESPONSE,
+            predictor = outlier_score, percent=TRUE,
+            # arguments for ci
+            ci=TRUE, boot.n=100, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+
+
+```
+
+```{r}
+
+# Train deep autoencoder learning model on "normal" 
+# training data, y ignored 
+anomaly_model <- h2o.deeplearning(
+ x = 1:4, 
+ training_frame = data_h2o, 
+ activation = "Tanh", 
+ autoencoder = TRUE, 
+ hidden = c(50,20,50), 
+ sparse = TRUE,
+ l1 = 1e-4, 
+ epochs = 100)
+
+# Compute reconstruction error with the Anomaly 
+# detection app (MSE between output and input layers)
+recon_error <- h2o.anomaly(anomaly_model, data_h2o)
+
+# Pull reconstruction error data into R and 
+# plot to find outliers (last 3 heartbeats)
+recon_error <- as.data.frame(recon_error)
+recon_error
+plot.ts(recon_error)
+
+```
+
+```{r}
+library(PCAtools)
+
+p <- pca(maindf[2:5], metadata = maindf, removeVar = 0.1)
+
+
+pc.cr <- princomp(main_input, cor = TRUE)
+pairs(pc.cr$loadings, col=c("red", "green", "blue"))
+
+
+library(lattice)
+library(mclust)
+dat <- maindf
+dat.pca <- prcomp(main_input)
+dat.em <- mclustBIC(main_input) 
+splom(as.data.frame(dat.pca$x), color = dat$RESPONSE, cex=2,pch='*')
+
+```
+
+```{r}
+autoplot(prcomp(df[2:5]), data = df[2:7], colour = 'Anomaly_Label')
+```
+
