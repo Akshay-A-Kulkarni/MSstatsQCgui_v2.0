@@ -2,14 +2,16 @@ source('src/QCMetrics.R')
 source('src/ggradar.R')
 source('src/helper-functions.R')
 #################################################################################################################
-#INPUT : "prodata" is the data user uploads.
+#   INPUT : "prodata" is the data user uploads.
 #        "precursorSelection" is the precursor that user selects in Data Import tab. it can be either one precursor(peptide) or it can be "all peptides"
 #        "L" and "U" are lower and upper bound of guide set that user choose in Data Import tab.
 #        "metric" is one of these metrics: COL.BEST.RET,COL.FWHM, COL.TOTAL.AREA,COL.PEAK.ASS or a metric that user defines in his data set
 #        "plot.method" is one of XmR, CUSUM or CP methods
 #        "normalization" is either TRUE or FALSE
 #        "y.title1" and "y.title2" are titles of left and right plot which are Individual Value and Moving Range
-# DESCRIPTION : Draws together the "Individual Value" and "Moving Range plots" (left and right plot) for each metric and method.
+#   DESCRIPTION : Draws together the "Individual Value" and "Moving Range plots" (left and right plot) for each metric and method.
+#################################################################################################################
+
 render.QC.chart <- function(prodata, precursorSelection, L, U, metric, plot.method, normalization, y.title1, y.title2,selectMean=NULL,selectSD=NULL, guidset_selected){
   validate(
     need(!is.null(prodata), "Please upload your data")

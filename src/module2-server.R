@@ -1,6 +1,13 @@
 mod2_server <- function(input, output, session) {
   
 
+  
+  observeEvent(input$switch_home, {
+    if (!is_page("home")) {
+      change_page("/")}
+  })
+  
+  
   ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
   
@@ -98,8 +105,7 @@ mod2_server <- function(input, output, session) {
       need(is.data.frame(prodata), prodata)
     )
     selectInput("pepSelection","Choose peptide"
-                ,choices = c(levels(prodata$Precursor),"all peptides"), selected = "all peptides"
-    )
+                ,choices = c(levels(prodata$Precursor),"all peptides"), selected = "all peptides" )
   })
   ######Show table of data #####################################################################################################
 
@@ -120,6 +126,21 @@ mod2_server <- function(input, output, session) {
       easyClose = TRUE,
       if(is.null(data$test)){p("Please upload your data or click [run with example data] to view the data here!")}
       else{DT::dataTableOutput("testview",height = "70vh")}
+    ))
+  })
+  
+  observeEvent(input$desc_modal, {
+    showModal(modalDialog(
+      title = "Uploaded Data",
+      size = "l",
+      easyClose = TRUE,
+      if(is.null(data$test)){
+        p("Please upload your data or click [run with example data] to view the data here!")
+        }
+      else if(input$box_plot_switch=="Per-Peptide"){uiOutput("box_plotly")}
+      else if(input$box_plot_switch=="Per-Metric"){plotlyOutput("box_plot")}
+      else{p("Somthing went wrong :(")}
+      
     ))
   })
   
@@ -341,7 +362,7 @@ mod2_server <- function(input, output, session) {
     if(l == 1) {
       heatmap_height <- ceiling(k)*300
     }else {
-      heatmap_height <- ceiling(k)*ceiling(l)*200
+      heatmap_height <- ceiling(k)*ceiling(l)*100
     }
   })
   
@@ -356,7 +377,7 @@ mod2_server <- function(input, output, session) {
       need(is.data.frame(prodata), prodata),
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
-    # metrics_box.plot(prodata, data.metrics = input$user_selected_metrics) %>% layout(width = JS('0.9*window.innerWidth'))
+    metrics_box.plot(prodata, data.metrics = input$user_selected_metrics)
   })
   
 
@@ -365,17 +386,26 @@ mod2_server <- function(input, output, session) {
     guideset <- data$guide
     testset <- data$test
     validate(
-      need(!is.null(guideset), "Please upload your data"),
+      need(!is.null(guideset), "Please upload your Guide data"),
       need(is.data.frame(guideset), guideset),
-      need(!is.null(testset), "Please upload your data"),
+      need(!is.null(testset), "Please upload your Test data"),
       need(is.data.frame(testset), testset),
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
     # guide_box_plots <- metrics_box.plot(guideset, data.metrics = input$user_selected_metrics, ret_obj_list = T)
     # test_box_plots <- metrics_box.plot(testset, data.metrics = input$user_selected_metrics, ret_obj_list = T)
     
-    guide_box_plots <- peptide_box.plot(guideset, data.peptides = c(levels(guideset$Precursor)), data.metrics = input$user_selected_metrics, ret_obj_list = T)
-    test_box_plots <-  peptide_box.plot(testset, data.peptides = c(levels(testset$Precursor)), data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    
+    if(input$pepSelection == 'all peptides'){
+      boxplot_peps <- c(levels(guideset$Precursor))
+    }
+    else{
+      boxplot_peps <- input$pepSelection
+    }
+    
+    
+    guide_box_plots <- peptide_box.plot(guideset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+    test_box_plots <-  peptide_box.plot(testset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
     
     get_plot_output_list <- function(input_n) {
       # Insert plot output objects the list
@@ -446,8 +476,9 @@ mod2_server <- function(input, output, session) {
     validate(
       need(!is.null(prodata), "Please upload your data"),
       need(is.data.frame(prodata), prodata),
-      need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule"),
-      need(!is.null(prodata$AcquiredTime),"To view heatmaps, the dataset should include Acquired Time column.")
+      need(!is.null(prodata$AcquiredTime),"To view heatmaps, the dataset should include Acquired Time column."),
+      need(!len(input$user_selected_metrics) == 0,"Please first select metrics and create a decision rule")
+
     )
     
     peptideThresholdRed <- (as.numeric(input$threshold_peptide_red))/100

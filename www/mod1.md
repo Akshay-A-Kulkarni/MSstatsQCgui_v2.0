@@ -4,7 +4,7 @@
 ## Module 1 of the MSstats-QC Framework
     
     
-In this module we provide a tool for users to upload their datasets for anomaly detetion using the `Isolation Forest` algorithm trained in h2O's R environment.
+In this module we provide a tool for users to upload their datasets for anomaly detetion using the `Isolation Forest` algorithm trained using the solitude package.
 
 
 
@@ -19,7 +19,7 @@ In this module we provide a tool for users to upload their datasets for anomaly 
 #### **Steps:**
 1. Upload the Input Data Set
 2. Set the Indices that will be used for computation and PCA visualtion 
-  (make sure ther are numeric only)
+  (make sure there are numeric only)
 
 3. Set a `Contamination Factor` which signifies the percentage of dataset presumed to be anomalous.
 (contamination factor used in the calculation of the threshold for Anomaly classification)

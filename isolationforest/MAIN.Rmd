@@ -111,14 +111,14 @@ if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
   setwd(dir)
 }
 
-input_df <- Data.set
+raw_df <- Data.set
 
 # input_df <- input_df %>% filter(peptide != "EACFAVEGPK")
-input_df <- input_df %>% filter(peptide == "SLHTLFGDELCK")
+raw_df <- raw_df %>% filter(peptide == "SLHTLFGDELCK")
 
 #input_df <- input_df %>% filter(peptide == "YICDNQDTISSK")
 
-input_df <- input_df[,2:7]
+raw_df <- raw_df[,2:7]
 
 # scale all numeric cols
     # num_cols <- colnames(dplyr::select_if(input_df, is.numeric))
@@ -222,6 +222,9 @@ library(DDoutlier)
 #Sanity check beta val
 print(betaVal)
 
+guide.set <- read.csv("guide_set.csv")
+source("simulate_test_data.R")
+
 # utility dir func (moved necessary dependancies in src folder in root of repo)
 # dir <- getwd()
 # if (tail(strsplit(dir,"/")[[1]],1) == "isolationforest"){
@@ -281,7 +284,7 @@ for (i in 1:B) {
 thresh<-median(boot_result)
 
 outlier <- as.vector(if_else(outlier_score > thresh, 'FAIL', 'PASS'))
-response <- as.vector(if_else(fullDF$RESPONSE == "FAIL", 'FAIL', 'PASS'))
+response <- as.vector(if_else(input_df$RESPONSE == "FAIL", 'FAIL', 'PASS'))
                       
 
 table(outlier, response)
@@ -422,11 +425,11 @@ library(pROC)
 rocobj1 <- plot.roc(RESPONSE, results$anomaly_score,
                     main="ROC comparison",
                     percent=TRUE,
-                    col="#1c61b6")
+                    col="#1c61b6",xlim = c(100, 0),add=FALSE)
 rocobj2 <- lines.roc(response, outlier_score, 
                      percent=TRUE, 
-                     col="#008600")
-testobj <- roc.test(rocobj1, rocobj2)
+                     col="#008600",xlim = c(100,0),add=FALSE)
+testobj <- roc.test(rocobj1, rocobj2, xlim = c(100,0),add=FALSE)
 legend("bottomright", legend=c("Isolation Forest", "LoOP"), col=c("#1c61b6", "#008600"), lwd=2)
 ```
 

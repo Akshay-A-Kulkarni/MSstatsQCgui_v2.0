@@ -1,15 +1,5 @@
-# library(shiny)
-# library(shinythemes)
-# library(DT)
-# library(shinyBS)
-# library(waiter)
-# library(pushbar)
-# library(shinyjs)
-# library(shinyWidgets)
-# library(plotly)
-# 
 
-mod1_ui <-fluidPage(
+mod1_ui <-fluidPage(style='padding-top: 8%;',
   navbarPage(id = "inTabset",
     theme = 'cosmo.min.css', position = 'fixed-top',
              title = div(id='Logo', 
@@ -21,7 +11,7 @@ mod1_ui <-fluidPage(
                          ), 
              windowTitle = "MSstatsQC - Module 1",
              header=tags$head(
-               tags$style(HTML('body { padding-top: 8%; }
+               tags$style(HTML('
                                 .navbar > .container-fluid {
                                     padding-left:5%;
                                     padding-right:5%;
@@ -88,6 +78,11 @@ mod1_ui <-fluidPage(
                                 )
                                 
                       )
-             )
+             ),
+  fixedPanel(
+    actionButton("switch_home", icon("home")),
+    left = 15,
+    bottom = 15
+  ),
 )
 

@@ -30,9 +30,9 @@
 # library(rpart.plot)
 # library(visNetwork)
 # 
-# source("src/module1-ui.R")
-# source("src/module1-server.R")
-# # 
-# # 
+# source("src/module2-ui.R")
+# source("src/module2-server.R")
+# #
+# #
 # # Run the app ----
-# shinyApp(ui = mod1_ui, server = mod1_server)
+# shinyApp(ui = mod2_ui, server = mod2_server)

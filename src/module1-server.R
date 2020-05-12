@@ -1,6 +1,10 @@
 
 mod1_server <- function(input, output, session) {
   
+  observeEvent(input$switch_home, {
+    if (!is_page("home")) {
+      change_page("/")}
+  })
   
   data <- reactiveValues(df = NULL, pairplot = NULL , plot = NULL, cf = NULL, tree_obj= NULL, rule_table= NULL )
 

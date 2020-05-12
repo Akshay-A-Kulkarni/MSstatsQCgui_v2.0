@@ -44,7 +44,6 @@ source("src/module2-ui.R")
 source("src/module2-server.R")
 source("src/module3-ui.R")
 source("src/module3-server.R")
-
 source("src/plot-functions.R")
 source("src/data-validation.R")
 source("src/helper-functions.R")
@@ -63,15 +62,15 @@ mod1p <- div(h4(strong("Individual experiments")),br(),
                column(5,img(src='mod1.png',width="100%")),
                column(7,p("Anomality detection without a guide set"),br(),
                       fluidRow(column(3, offset = 0,actionButton("switch_mod1", "Launch"))),br(),
-                      fluidRow(column(2, offset = 0,actionButton("help_mod1", "Help"))))
+                      fluidRow(column(2, offset = 0,actionButton("help_mod1", "More Info"))))
              ),
 )
 mod2p <- div(h4(strong("Longitudinal tracking")),br(),
              fluidRow(
-               column(5,img(src='mod2.png',width="100%")),
+               column(5,img(src='mod2.png',width="95%")),
                column(7,p("Longitudinal benchmarking with a guide set"),br(),
                       fluidRow(column(3, offset = 0,actionButton("switch_mod2", "Launch"))),br(),
-                      fluidRow(column(2, offset = 0,actionButton("help_mod2", "Help")))
+                      fluidRow(column(2, offset = 0,actionButton("help_mod2", "More Info")))
                )
              ),
 )
@@ -119,13 +118,14 @@ home_page <- fluidPage(style="padding:0%; margin:0%; font-size:20px",
                        # Main Body
                fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;font-size:20px;",
 
-                       fluidRow(column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
+                       fluidRow(
+                          column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
                                 ),
                        fluidRow( br(),br(),br(),br(),
                          fluidRow(
-                           column(4,wellPanel(style=cardCSS, mod1p,br(),br())),
-                           column(4,wellPanel(style=cardCSS, mod2p,br(),br())),
-                           column(4,wellPanel(style=cardCSS, mod3p)),                        
+                           column(6,wellPanel(style=cardCSS, mod1p,br(),br())),
+                           column(6,wellPanel(style=cardCSS, mod2p,br(),br())),
+                           # column(4,wellPanel(style=cardCSS, mod3p)),
                          ),
                          column(10,offset=1, h3("About"),includeMarkdown("www/include.md"))),
                        br(),br(),
@@ -175,7 +175,7 @@ router <- shiny.router::make_router(
 
 # Create output for our router in main UI of Shiny app.
 ui <- shinyUI(fluidPage(
-  waiter::use_waiter(),
+  # waiter::use_waiter(),
   shinyjs::useShinyjs(),
   shinyFeedback::useShinyFeedback(),
   waiter::use_waitress(),
