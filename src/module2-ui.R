@@ -1,15 +1,15 @@
 ### Importing UI components
 hr_line <- HTML('<hr style ="border-color:black; font-size:5rem;">')
-divider <- function(icon_str){ 
-  fluidRow(column(4,offset = 1,hr_line),column(2, style="padding: 0%; margin:0%; font-size:2rem;", align="center",icon(icon_str)),column(4,hr_line))}
+# divider <- function(icon_str){ 
+#   fluidRow(column(4,offset = 1,hr_line),column(1, style="padding: 0%; margin:0%; font-size:2rem;", align="center",icon(icon_str)),column(4,hr_line))}
 source("src/components/input_section_ui.R")
 source("src/components/about_page_ui.R")
 source("src/components/plotresults_ui.R")
 source("src/components/methods_ui.R")
 
-
-
-
+divider <- function(title_str,icon_str){ 
+fluidRow(column(4,offset = 1,hr_line),column(2,style="padding: 0% display:block;",align="center",icon(icon_str),h4(title_str)),column(4,hr_line))
+}
 
 mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(), 
                       navbarPage(theme = 'cosmo.min.css',position = 'fixed-top',
@@ -27,20 +27,20 @@ mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(
 
                            tabPanel(title = "Tool",icon = icon("upload"), id='tool_tab',
                                       br(),br(),
-                                      divider("cog"),
-                                      fluidRow(column(offset=1,10,h3("Data Import & Metric Rules"))),
+                                      divider("Data Import & Metric Rules","cog"),
+                                      # fluidRow(column(offset=1,10,h3("Data Import & Metric Rules"))),
                                       ########## Input File and Metrics ui Component #######
                                       input_section_ui,
                                       ######################################################
                                       
                                       br(),br(),
-                                      divider("user-cog"),
+                                      divider("Descriptive Plots and Method Selection","user-cog"),
                                       ########## Input File and Metrics ui Component #######
                                       methods_ui,
                                       ######################################################
                                       
                                       br(),br(),
-                                      divider("chart-bar"),
+                                      divider("Plots & Results","chart-bar"),
                                       ########## Heatmaps and summary ui Component #########
                                       plotresults_ui 
                                       ######################################################

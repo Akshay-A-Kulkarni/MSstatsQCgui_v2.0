@@ -1,5 +1,5 @@
 plotresults_ui <- fluidRow(column(offset=1,10,
-  fluidRow(h3("Plots & Results")),
+  # fluidRow(h3("Plots & Results")),
   tabsetPanel(type = 'pill',
               # tabPanel("Descriptives : boxplots for metrics",
               #          tags$head(tags$style(type="text/css")),

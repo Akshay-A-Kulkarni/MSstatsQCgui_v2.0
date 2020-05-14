@@ -350,9 +350,9 @@ mod2_server <- function(input, output, session) {
     }else if(l == 2) {
       my_width = 800
     }else if(l == 3) {
-      my_width = 1200
+      my_width = 1000
     }
-    my_width <- 1400
+    my_width <- 1200
     
   })
   
@@ -404,10 +404,11 @@ mod2_server <- function(input, output, session) {
     }
     
     
-    guide_box_plots <- peptide_box.plot(guideset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
-    test_box_plots <-  peptide_box.plot(testset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
-    
     get_plot_output_list <- function(input_n) {
+      
+      guide_box_plots <- peptide_box.plot(guideset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+      test_box_plots <-  peptide_box.plot(testset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
+      
       # Insert plot output objects the list
       plot_output_list <- lapply(1:input_n, function(i) {
         plotname <- paste("boxplot", i, sep="")
@@ -422,7 +423,7 @@ mod2_server <- function(input, output, session) {
       return(plot_output_list)
     }
 
-    get_plot_output_list(length(guide_box_plots))
+    get_plot_output_list(length(boxplot_peps))
     
     })
   
@@ -477,7 +478,7 @@ mod2_server <- function(input, output, session) {
       need(!is.null(prodata), "Please upload your data"),
       need(is.data.frame(prodata), prodata),
       need(!is.null(prodata$AcquiredTime),"To view heatmaps, the dataset should include Acquired Time column."),
-      need(!len(input$user_selected_metrics) == 0,"Please first select metrics and create a decision rule")
+      need(length(input$user_selected_metrics) != 0,"Please first select metrics and create a decision rule")
 
     )
     
