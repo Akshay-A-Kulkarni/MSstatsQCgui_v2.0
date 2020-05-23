@@ -1,15 +1,15 @@
 input_section_ui <- fluidRow(
       column(3,offset = 1,
          fluidRow(column(5,),column(2,style="padding: 0%",align="center",strong("1.Upload"),br(),uiOutput("upload_mark")),column(5,)),
-         p(strong("Upload File")),
          wellPanel(
+           p(strong("Upload File:")),
            p("Upload your data (Comma-separated (*.csv) QC file format)"),
            p("To see acceptable example data, look at", strong("Help"),"tab"),
            fluidRow(column(9,fileInput("filein", label= p(strong("Guide Data")), accept = c(".csv"))),
-                    column(3,style = "padding-top: 10%", tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset"))
+                    column(3,style="padding:5%;",tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset"))
            ),
            fluidRow(column(9,fileInput("testin", label= p(strong("Test Data")), accept = c(".csv"))),
-                    column(3,style = "padding-top: 10%",tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset"))
+                    column(3,style="padding:5%;",tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset"))
            ),
          ),
          
@@ -26,8 +26,8 @@ input_section_ui <- fluidRow(
          )),
   column(4,
          fluidRow(column(5,),column(2,style="padding: 0%", align="center",strong("2.Metrics"),br(),uiOutput("metric_mark")),column(5,)),
-         p(strong("Select metrics for all further analysis:")),
          wellPanel(
+           p(strong("Select metrics for all further analysis:")),
            fluidRow(
              column(10,
                     uiOutput("metricSelection"),
@@ -59,8 +59,8 @@ input_section_ui <- fluidRow(
          )),
   column(3,
          fluidRow(column(5,),column(2, style="padding: 0%", align="center",strong("3.Threshold"),br(),uiOutput("threshold_mark")),column(5,)),
-         p(strong("Create Your Decision Rules")),
          wellPanel(
+           p(strong("Create Your Decision Rules:")),
            div(p(strong("RED FLAG"), style="color:black; background-color: red;",align = "center",style="font-size:125%;"),
                fluidPage(p(strong("System performance is UNACCEPTABLE when:"),align = "center"),
                          p("peptides greater than the selected % of peptides are", strong("out of control")),

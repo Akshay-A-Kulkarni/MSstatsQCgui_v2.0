@@ -39,36 +39,36 @@ clearString <- function(x){
 
 # This function receives the data and check the column names of data and changes the column names if it is not the
 # same names as our suggested sample data to fit our suggested sample data
-guessColumnName <- function(x){
-
-  a <- clearString(x)
-
-  max_index <- 0
-  max <- -1
-  for(i in seq_len(length(best_colnames))){
-    col <- best_colnames[[i]]
-    for(j in seq_len(length(col))){
-      sim <- levenshteinSim(a,clearString(col[j]))
-      if(sim > max){
-        max <- sim
-        max_index <- i
-      }
-    }
-  }
-  if (max > 0.6) {
-    return(best_colnames[[max_index]][1])
-  }
-  else {
-    return(x)
-  }
-}
+# guessColumnName <- function(x){
+# 
+#   a <- clearString(x)
+# 
+#   max_index <- 0
+#   max <- -1
+#   for(i in seq_len(length(best_colnames))){
+#     col <- best_colnames[[i]]
+#     for(j in seq_len(length(col))){
+#       sim <- levenshteinSim(a,clearString(col[j]))
+#       if(sim > max){
+#         max <- sim
+#         max_index <- i
+#       }
+#     }
+#   }
+#   if (max > 0.6) {
+#     return(best_colnames[[max_index]][1])
+#   }
+#   else {
+#     return(x)
+#   }
+# }
 #############################################################################################################
 input.sanity.check <- function(prodata) {
   error_message <- ""
   null_columns <- c()
 
   # get the column names and change them to the column names that we want (For example we want Retention Time but a user might use RT, this function auotomatically change RT to Retention Time)
-  colnames(prodata) <- unlist(lapply(colnames(prodata), function(x)guessColumnName(x)))
+  # colnames(prodata) <- unlist(lapply(colnames(prodata), function(x)guessColumnName(x)))
 
 
   ### conditions

@@ -1,27 +1,21 @@
 library(shiny)
 library(shiny.router)
-library(shinythemes)
-library(DT)
 library(shinyBS)
 library(shinyjs)
 library(shinyWidgets)
 library(waiter)
 library(bsplus)
 library(htmltools)
-#####################################
-library(plotly)
-library(RecordLinkage)
-library(MSstatsQC)
-library(MSstatsQCgui)
-library(dplyr)
-library(ggExtra)
-library(gridExtra)
-library(grid)
 library(fresh)
 library(tippy)
 library(tidyr)
 library(shinyFeedback)
-library(h2o)
+#####################################
+library(dplyr)
+library(ggExtra)
+library(gridExtra)
+library(grid)
+# library(h2o)
 library(DT)
 library(plotly)
 library(solitude)
@@ -29,13 +23,14 @@ library(rpart)
 library(rpart.plot)
 library(visNetwork)
 
+# if (!"package:MSstatsQCgui" %in% search())
+#   import_fs("MSstatsQCgui", incl = c("shiny","shinyBS","dplyr","plotly","RecordLinkage","ggExtra","gridExtra","grid"))
 
-if (!"package:MSstatsQCgui" %in% search())
-  import_fs("MSstatsQCgui", incl = c("shiny","shinyBS","dplyr","plotly","RecordLinkage","ggExtra","gridExtra","grid"))
-
-# ARCHIVED RECORD LINKAGE PACKAGE.
+# # ARCHIVED RECORD LINKAGE PACKAGE.
 # RecordLinkageURL <- "https://cran.r-project.org/src/contrib/Archive/RecordLinkage/RecordLinkage_0.4-11.tar.gz"
-# install.packages(RecordLinkageURL, repos=NULL, type="source")
+# install.packages("https://cran.r-project.org/src/contrib/Archive/RecordLinkage/RecordLinkage_0.4-11.tar.gz", repos=NULL, type="source")
+# library(RecordLinkage)
+
 
 # Sourcing all modules pages to the main routing app.
 source("src/module1-ui.R")
@@ -54,6 +49,8 @@ cardCSS <- "box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 
             box-shadow: 7px 7px 30px -5px rgba(0,0,0,0.1);
             position: relative;
             height: 50%;"
+
+
 
 # Main Home Page cards
 
@@ -88,7 +85,8 @@ mod3p <- div(h4(strong("Complex QC")),br(),
 
 
 # Part of both pages.
-home_page <- fluidPage(style="padding:0%; margin:0%; font-size:20px",
+home_page <- fluidPage(theme = 'cosmo.min.css',
+                       style="padding:0%; margin:0%; font-size:20px",
                         tags$head(
                           tags$style(HTML("@import url('https://fonts.googleapis.com/css?family=Open+Sans:300,400,700');"),
                                      HTML("padding-top:0;"))),
@@ -119,7 +117,7 @@ home_page <- fluidPage(style="padding:0%; margin:0%; font-size:20px",
                fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;font-size:20px;",
 
                        fluidRow(
-                          column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center", style='font-size:5rem;'),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
+                          column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center"),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
                                 ),
                        fluidRow( br(),br(),br(),br(),
                          fluidRow(
@@ -175,7 +173,7 @@ router <- shiny.router::make_router(
 
 # Create output for our router in main UI of Shiny app.
 ui <- shinyUI(fluidPage(
-  # waiter::use_waiter(),
+  waiter::use_waiter(),
   shinyjs::useShinyjs(),
   shinyFeedback::useShinyFeedback(),
   waiter::use_waitress(),
@@ -185,27 +183,29 @@ ui <- shinyUI(fluidPage(
 # Plug router into Shiny server.
 server <- shinyServer(function(input, output, session) {
   router(input, output, session)
-  # 
-  # loading_screen <- tagList(
-  #   h3("Initializing MSstatsQC", style = "color:white;"),
-  #   br(),
-  #   waiter::spin_flower(),
-  #   div(style='padding:15vh')
-  # )
-  # 
-  # loadScreen <- Waiter$new(html = loading_screen, color='#242424')
-  # 
-  # 
-  # loadScreen$show()
-  # 
-  # Sys.sleep(2)
-  # 
-  # loadScreen$update(html = tagList(img(src="logo.png", height=150),div(style='padding:15vh')))
-  # 
-  # Sys.sleep(1)
-  # 
-  # loadScreen$hide()
+
+  loading_screen <- tagList(
+    h3("Initializing MSstatsQC", style = "color:white;"),
+    br(),
+    waiter::spin_flower(),
+    div(style='padding:15vh')
+  )
+
+  loadScreen <- Waiter$new(html = loading_screen, color='#242424')
+
+
+  loadScreen$show()
+
+  Sys.sleep(2)
+
+  loadScreen$update(html = tagList(img(src="logo.png", height=150),div(style='padding:15vh')))
+
+  Sys.sleep(1)
+
+  loadScreen$hide()
 })
 
 # Run server in a standard way.
 shinyApp(ui=ui, server=server)
+
+

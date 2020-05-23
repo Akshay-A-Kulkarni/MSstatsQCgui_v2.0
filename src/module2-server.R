@@ -469,7 +469,7 @@ mod2_server <- function(input, output, session) {
     }
     if(length(plots) > 0)
       do.call("grid.arrange", c(plots, ncol = 1))
-  }, height = my_height, width = my_width)
+  }, height = my_height)
   ############################# heat_map in Summary tab #############################################
   output$heat_map <- renderPlot({
     prodata <- data$df
@@ -521,7 +521,7 @@ mod2_server <- function(input, output, session) {
     if(length(plots) > 0)
       do.call("grid.arrange", c(plots, ncol = 1))
     
-  }, height = heatmap_height, width = heatmap_width)
+  }, height = heatmap_height)
   
   session$onSessionEnded(function() {
     stopApp()

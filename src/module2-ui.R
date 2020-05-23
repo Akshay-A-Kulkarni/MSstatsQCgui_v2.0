@@ -1,21 +1,22 @@
 ### Importing UI components
 hr_line <- HTML('<hr style ="border-color:black; font-size:5rem;">')
-# divider <- function(icon_str){ 
-#   fluidRow(column(4,offset = 1,hr_line),column(1, style="padding: 0%; margin:0%; font-size:2rem;", align="center",icon(icon_str)),column(4,hr_line))}
+divider <- function(title_str,icon_str,off_x){
+  width <- ((10-2*off_x)*0.5)
+  fluidRow(column(width,offset = off_x,hr_line),column(2,style="margin:0%;padding: 0% display:block;",align="center",icon(icon_str),h4(title_str)),column(width,hr_line))
+}
+
 source("src/components/input_section_ui.R")
 source("src/components/about_page_ui.R")
 source("src/components/plotresults_ui.R")
 source("src/components/methods_ui.R")
+source("src/components/common_css.R")
 
-divider <- function(title_str,icon_str){ 
-fluidRow(column(4,offset = 1,hr_line),column(2,style="padding: 0% display:block;",align="center",icon(icon_str),h4(title_str)),column(4,hr_line))
-}
 
 mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(), 
                       navbarPage(theme = 'cosmo.min.css',position = 'fixed-top',
-                                 title = div(id='Logo', div(img(src="logo.png", height=50, width=50),"MSstatsQC")),
-                                 windowTitle = "MSstatsQC",
-                                 header=tags$head(tags$style(HTML(module2css))),#### module 2 css from about_page.r ###
+                                 title = div(id='Logo', "MSstatsQC-Module 2"),
+                                 windowTitle = "MSstatsQC-Module2",
+                                 header=tags$head(tags$style(HTML(modulecss))),#### module 2 css from common_css.r ###
                                  
                            tabPanel(title= "About", icon = icon("bar-chart-o"),
                                    
@@ -27,24 +28,39 @@ mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(
 
                            tabPanel(title = "Tool",icon = icon("upload"), id='tool_tab',
                                       br(),br(),
-                                      divider("Data Import & Metric Rules","cog"),
+                                      divider("Data Import & Metric Rules","cog",1),
                                       # fluidRow(column(offset=1,10,h3("Data Import & Metric Rules"))),
                                       ########## Input File and Metrics ui Component #######
                                       input_section_ui,
                                       ######################################################
                                       
                                       br(),br(),
-                                      divider("Descriptive Plots and Method Selection","user-cog"),
+                                      divider("Descriptive Plots and Method Selection","user-cog",1),
                                       ########## Input File and Metrics ui Component #######
                                       methods_ui,
                                       ######################################################
                                       
                                       br(),br(),
-                                      divider("Plots & Results","chart-bar"),
+                                      divider("Plots & Results","chart-bar",1),
                                       ########## Heatmaps and summary ui Component #########
-                                      plotresults_ui 
-                                      ######################################################
                                     
+                                      plotresults_ui,
+                                    
+                                      ######################################################
+                                      # Footer
+                                      ######################################################
+                                      br(),br(),br(),br(),br(),
+                                      wellPanel(fluidPage(
+                                        column(2,wellPanel(strong("Current Maintainers:"),
+                                                           p("1. Akshay Kulkarni",br(),"2. Eralp Dogu"))),
+                                        
+                                        column(6,wellPanel(strong("Contact"),
+                                                           p("For Bugs,comments or suggestions, please go to our",tags$a(href="https://github.com/Akshay-A-Kulkarni/MSstatsQCgui_v2.0", "GithHub"), " repo.",br()))),
+                                        
+                                        column(4,
+                                               wellPanel(strong("MSstatsQCgui"),br(),
+                                                         p("MSstatsQC 1.2.0 (Bioconductor version : Release 3.7"))),
+                                      ))
                                     ),
                         navbarMenu("Control charts",
                                    tabPanel("XmR control charts",

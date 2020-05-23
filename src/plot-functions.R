@@ -382,11 +382,11 @@ peptide_box.plot <- function(prodata, data.peptides, data.metrics, ret_obj_list 
   for(i in seq_len(length(data.peptides))) {
     peptide <- data.peptides[i]
     
-    data <- prodata %>% filter(Precursor == peptide) 
+    data <- prodata %>% dplyr::filter(Precursor == peptide) 
     
-    data <-  data %>% mutate_at(data.metrics, ~(scale(., center = T) %>% as.vector)) 
+    data <-  data %>% dplyr::mutate_at(data.metrics, ~(scale(., center = T) %>% as.vector)) 
     
-    data <-  data %>% select(Precursor,data.metrics) %>% pivot_longer(-Precursor, names_to = "Metric", values_to = "Value") 
+    data <-  data %>% dplyr::select(Precursor,data.metrics) %>% tidyr::pivot_longer(-Precursor, names_to = "Metric", values_to = "Value") 
     
     plots[[i]] <- plot_ly(data, x = ~Metric, y = ~Value, color = ~Metric, type = "box") %>%
       layout(
