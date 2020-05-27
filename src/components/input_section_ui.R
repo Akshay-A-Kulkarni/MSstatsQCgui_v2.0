@@ -6,10 +6,10 @@ input_section_ui <- fluidRow(
            p("Upload your data (Comma-separated (*.csv) QC file format)"),
            p("To see acceptable example data, look at", strong("Help"),"tab"),
            fluidRow(column(9,fileInput("filein", label= p(strong("Guide Data")), accept = c(".csv"))),
-                    column(3,style="padding:5%;",tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset"))
+                    column(3,br(),div(style='padding-top:15px',tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset")))
            ),
            fluidRow(column(9,fileInput("testin", label= p(strong("Test Data")), accept = c(".csv"))),
-                    column(3,style="padding:5%;",tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset"))
+                    column(3,br(),div(style='padding-top:15px',tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset")))
            ),
          ),
          
