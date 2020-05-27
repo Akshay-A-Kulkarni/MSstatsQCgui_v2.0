@@ -41,8 +41,7 @@ find_custom_metrics <- function(prodata) {
     nums <- vapply(prodata, is.numeric, FUN.VALUE = logical(1))
     other.metrics <- colnames(prodata[,nums])[1:ifelse(length(colnames(prodata[,nums]))<31,
                                                        length(colnames(prodata[,nums])),
-                                                       30)
-                                              ] # limiting custom metrics up to 30 metrics and not more
+                                                       30)] # limiting custom metrics up to 30 metrics and not more
     if(any(is.na(other.metrics))) {
       return(c())
     }

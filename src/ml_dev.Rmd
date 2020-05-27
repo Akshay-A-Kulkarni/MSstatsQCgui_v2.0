@@ -1,0 +1,58 @@
+---
+title: "QC_ML"
+output: html_notebook
+---
+
+
+```{r message=FALSE, warning=FALSE}
+library(h2o)
+library(MASS)
+library(ggExtra)
+library(ggplot2)
+library(gridExtra)
+library(stats)
+library(FrF2) 
+library(car)
+library(reshape2)
+library(lime)
+library(dplyr)
+```
+
+
+```{r}
+source("MSStatsQC.ML.trainR.R")
+source("MSStatsQC.ML.testR.R")
+
+```
+
+
+```{r}
+setwd("/Users/akshaykulkarni/Desktop/GitHub/MSstatsQCgui_v2.0/")
+guide.set <- input_checking(read.csv("/Users/akshaykulkarni/Desktop/GitHub/MSstatsQCgui_v2.0/Datasets/dda_guide_set.csv"))
+test.set <- input_checking(read.csv("/Users/akshaykulkarni/Desktop/GitHub/MSstatsQCgui_v2.0/Datasets/dda_test_set.csv"))
+
+
+data <- input_checking(df1)
+    
+print(data)
+# guide.set <- read.csv("Sampledata_CPTAC_Study_9_1_Site54_GUIDE.csv")
+# test.set <- read.csv("Sampledata_CPTAC_Study_9_1_Site54_TEST.csv")
+
+
+# MSstatsQC.ML.trainR(guide.set[,], sim.size=1000, guide.set.annotations = NULL)
+# MSstatsQC.ML.trainR(guide.set, sim.size=1000, guide.set.annotations = guide.set.DDA.anno)
+rf_model <- MSstatsQC.ML.trainR(guide.set, sim.size=1000)
+
+new.test<-rbind(guide.set[,], test.set[test.set$idfile>41234&test.set$idfile<41505 ,])
+new.test<-rbind(guide.set[201:838,], test.set[1:200,])
+x <- MSstatsQC.ML.testR(new.test, guide.set)
+
+
+```
+
+```{r}
+
+plot(x$dec_map)
+
+
+```

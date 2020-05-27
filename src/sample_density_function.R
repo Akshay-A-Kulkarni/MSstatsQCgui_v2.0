@@ -6,8 +6,8 @@ sim.sample}
 sample_density <- function(guide.set, n){
   sample_data<-c()
   guide.set.scale<-data.frame(NULL)
-  for(i in 1:nlevels(guide.set$peptide)){
-  guide.set.temp<-robust.scale(guide.set[guide.set$peptide==levels(guide.set$peptide)[i],c(3:ncol(guide.set))])
+  for(i in 1:nlevels(guide.set$Precursor)){
+  guide.set.temp<-robust.scale(guide.set[guide.set$Precursor==levels(guide.set$Precursor)[i],c(4:ncol(guide.set))])
   guide.set.scale<-rbind(guide.set.scale, guide.set.temp)
   }
   for(k in 1:ncol(guide.set.scale)){guide.set.scale[,k] <- bctrans(guide.set.scale[,k])}
@@ -18,7 +18,7 @@ sample_density <- function(guide.set, n){
     sample_data[,j] <- dens(guide.set.scale[,j], n)
   }
   
-  names(sample_data) <- colnames(guide.set[,c(3:(ncol(guide.set)))])
+  names(sample_data) <- colnames(guide.set[,c(4:(ncol(guide.set)))])
   
   return(sample_data)
 }

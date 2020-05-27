@@ -15,7 +15,6 @@ library(dplyr)
 library(ggExtra)
 library(gridExtra)
 library(grid)
-# library(h2o)
 library(DT)
 library(plotly)
 library(solitude)
@@ -23,6 +22,17 @@ library(rpart)
 library(rpart.plot)
 library(visNetwork)
 
+
+############# MSSTATSQC-ML #################
+library(h2o)
+library(MASS)
+library(ggplot2)
+library(stats)
+library(FrF2) 
+library(car)
+library(reshape2)
+library(lime)
+ 
 # if (!"package:MSstatsQCgui" %in% search())
 #   import_fs("MSstatsQCgui", incl = c("shiny","shinyBS","dplyr","plotly","RecordLinkage","ggExtra","gridExtra","grid"))
 
@@ -43,6 +53,9 @@ source("src/plot-functions.R")
 source("src/data-validation.R")
 source("src/helper-functions.R")
 source("src/QCMetrics.R")
+
+source("src/MSStatsQC.ML.trainR.R")
+source("src/MSStatsQC.ML.testR.R")
 
 cardCSS <- "box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
             border-radius: 0.5rem;

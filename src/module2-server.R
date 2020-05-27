@@ -14,18 +14,22 @@ mod2_server <- function(input, output, session) {
   observeEvent(input$filein, {
     file1 <- input$filein
     data$guide <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    # data$guide <- read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
+    
     validate(
       need(!is.null(data$guide), "Please upload your data"),
       need(is.data.frame(data$guide), data$guide)
     )
     # data$metrics <- c(find_custom_metrics(data$df))
-  }, priority = 20)
+  }, priority = 40)
   
 
   
   observeEvent(input$testin, {
     file2 <- input$testin
     data$test <- input_checking(read.csv(file=file2$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    # data$test <- read.csv(file=file2$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
+    
     validate(
       need(!is.null(data$test), "Please upload your data"),
       need(is.data.frame(data$test), data$test)
@@ -35,9 +39,10 @@ mod2_server <- function(input, output, session) {
     testset <- data$test
     df1 <- rbind(guideset,testset)
     
-    data$df <- input_checking(df1)
+    data$df <- df1
+    # data$df <- input_checking(df1)
     data$metrics <- c(find_custom_metrics(data$df))
-  }, priority = 20)
+  }, priority = 40)
   
   
   # observeEvent(input$sample_button, {
@@ -152,7 +157,7 @@ mod2_server <- function(input, output, session) {
     uploaded <- !is.null(data$df)
     
     if(uploaded){ 
-      # Given all checks pass set guide bounds  ( IMP - The nuber of observations of each peptide in the guideset MUST be equal.)
+      # Given all checks pass set guide bounds  ( IMP - The number of observations of each peptide in the guideset MUST be equal.)
       # guideset <- data$guide
       data$L <- 1
       data$U <- nrow(data$guide)/length(levels(data$guide$Precursor))
@@ -523,7 +528,32 @@ mod2_server <- function(input, output, session) {
     
   }, height = heatmap_height)
   
+  
+  ############################# heat_map in Summary tab #############################################
+  output$ml_heat_map <- renderPlot({
+    guide.set <- data$guide
+    test.set <- data$test
+    
+    validate(
+      need(!is.null(guide.set), "Please upload your train data"),
+      need(is.data.frame(guide.set), guide.set),
+      need(!is.null(test.set), "Please upload your test data"),
+      need(is.data.frame(test.set), test.set),
+      need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
+      
+    )
+    
+   
+    
+    train_model <- MSstatsQC.ML.trainR(guide.set, sim.size=100)
+
+    ML_plots <- MSstatsQC.ML.testR(test.set, guide.set, rf_model = train_model)
+    
+    ML_plots$dec
+  }, height = heatmap_height)
+  
   session$onSessionEnded(function() {
+    h2o::h2o.shutdown(prompt = F)
     stopApp()
   })
   

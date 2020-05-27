@@ -1,15 +1,7 @@
-plotresults_ui <- fluidRow(column(offset=1,10,
+plotresults_ui <- fluidRow(style="height:50vh;",column(offset=1,10,
   # fluidRow(h3("Plots & Results")),
-  tabsetPanel(type = 'pill',
-              # tabPanel("Descriptives : boxplots for metrics",
-              #          tags$head(tags$style(type="text/css")),
-              #          br(),
-              #          conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-              #                           tags$div("It may take a while to load the plots, please wait...",
-              #                                    id="loadmessage")),
-              #          # fluidPage(style="width:90%",uiOutput("box_plotly"), plotlyOutput("box_plot"))
-              # ),
-              tabPanel("Overall performance : decision maps",
+  tabsetPanel(type = 'pill', id='module2-results',
+              tabPanel(title = "Overall performance : SPC decision maps",value = 'spc1',
                        tags$head(tags$style(type="text/css")),
                        br(),
                        conditionalPanel(condition="$('html').hasClass('shiny-busy')",
@@ -23,7 +15,7 @@ plotresults_ui <- fluidRow(column(offset=1,10,
                          mainPanel(plotOutput("heat_map"))
                        )
               ),
-              tabPanel("Detailed performance: plot summaries",
+              tabPanel(title = "Detailed performance: plot summaries",value = 'spc2',
                        tags$head(tags$style(type="text/css")),
                        conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                                         tags$div("It may take a while to load the plots, please wait...",
@@ -48,6 +40,14 @@ plotresults_ui <- fluidRow(column(offset=1,10,
                            column(10,plotOutput("plot_summary"))
                          )
                        ),
+              ),
+              tabPanel(title = "Overall performance : ML decision maps",value = 'ml1',
+                       tags$head(tags$style(type="text/css")),
+                       br(),
+                       conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                                        tags$div("It may take a while to load the plots, please wait...",
+                                                 id="loadmessage")),
+                       fluidPage(plotOutput("ml_heat_map"))
               )
   )
 )
