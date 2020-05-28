@@ -31,7 +31,6 @@ input_section_ui <- fluidRow(
            fluidRow(
              column(10,
                     uiOutput("metricSelection"),
-                    uiOutput("metricSelection1"),
                     htmlOutput("metricSelectionErrorMsg")
                     
              )

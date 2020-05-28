@@ -4,7 +4,9 @@ divider <- function(title_str,icon_str,off_x){
   width <- ((10-2*off_x)*0.5)
   fluidRow(column(width,offset = off_x,hr_line),column(2,style="margin:0%;padding: 0% display:block;",align="center",icon(icon_str),h4(title_str)),column(width,hr_line))
 }
+
 source("src/components/common_css.R")
+
 
 
 mod1_ui <-fluidPage(style='padding-top: 8%;',
@@ -27,11 +29,11 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                 divider("Input and Parameter settings","user-cog",0),
                                 br(),br(),
                                 wellPanel(fluidRow(
-                                  column(3,fileInput("anomalyfilein", label= p(strong("Upload Dataset")), accept = c(".csv"))),
-                                  column(2,numericInput("lb", div("Starting Col Idx:", style="padding-bottom:6%;"),1, min = 1)),
-                                  column(2,numericInput("ub", div("Ending Col Idx:", style="padding-bottom:6%;"), 2,min = 1)),
-                                  column(3,numericInput("cf", "Contamination Factor:",min = 0, max = 1,value = 0.05)),
-                                  column(2,div(
+                                  column(3,div(fileInput("anomalyfilein", label= p(strong("Upload Dataset")), accept = c(".csv")))),
+                                  column(4,div(style='line-height: 2;',uiOutput("colSelection"))),
+                                  column(2,div(style='line-height: 2;',numericInput("cf", "Contamination Factor:",min = 0, max = 1,value = 0.05))),
+                                  column(2, offset=1,
+                                    div(
                                     actionGroupButtons(
                                       c("go", "clear_button", "report"),
                                       c("Plot!", "Clear Data", "Generate report"),
@@ -51,7 +53,7 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                                   tabPanel(value  = 'pairplottab',title = "Original Plot", plotOutput('pairplot',height='60vh')),
                                                   tabPanel(value = 'pcaplottab',title = "PCA Plot", div(id = "loadpca",plotlyOutput('plot',height='60vh'))),
                                                   tabPanel(value = 'treeplot', title = "Tree Plot", visNetworkOutput("tree",height='60vh')),
-                                                  tabPanel(value = 'treeplot', title = "Extracted Rules", DT::dataTableOutput("ruletable", height ="60vh"))
+                                                  tabPanel(value = 'ruletable', title = "Extracted Rules", DT::dataTableOutput("ruletable", height ="60vh"))
                                                   )
                                               ),
                                          )

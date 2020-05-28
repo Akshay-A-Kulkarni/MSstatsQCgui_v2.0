@@ -144,7 +144,7 @@ mod2_server <- function(input, output, session) {
         }
       else if(input$box_plot_switch=="Per-Peptide"){uiOutput("box_plotly")}
       else if(input$box_plot_switch=="Per-Metric"){plotlyOutput("box_plot")}
-      else{p("Somthing went wrong :(")}
+      else{p("Something went wrong :(")}
       
     ))
   })
@@ -209,14 +209,14 @@ mod2_server <- function(input, output, session) {
   
   ###### Tab for selecting decision rule and metrics ###############################################
   
-  output$metricSelection1 <- renderUI({
+  output$metricSelection <- renderUI({
     pickerInput(
       inputId = "user_selected_metrics", 
       label = "Select one, multiple or all metrics", 
       choices = c(data$metrics), 
       options = list(
         `actions-box` = TRUE,
-        style="background-color:grey; color:black"
+        `style`="background-color:white; color:black"
       ), 
       multiple = TRUE
     )

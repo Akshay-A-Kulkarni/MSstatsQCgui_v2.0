@@ -1,22 +1,27 @@
 
 mod1_server <- function(input, output, session) {
   
+  
   observeEvent(input$switch_home, {
     if (!is_page("home")) {
       change_page("/")}
   })
   
-  data <- reactiveValues(df = NULL, pairplot = NULL , plot = NULL, cf = NULL, tree_obj= NULL, rule_table= NULL )
+  data <- reactiveValues(
+                    df = NULL,
+                    cols=NULL, 
+                    selected_cols=NULL, 
+                    pairplot = NULL , 
+                    plot = NULL, 
+                    cf = NULL, 
+                    tree_obj= NULL, 
+                    rule_table= NULL 
+                    )
 
   observeEvent(input$jumpToP2, {
     updateTabsetPanel(session, "inTabset",
                       selected = "panel2")
   },priority = 40)
-  # 
-  # observeEvent(input$go, {
-  #   updateTabsetPanel(session, "inPlotSet",
-  #                     selected = "pcaplottab")
-  # },priority = 30)
   
   observeEvent(input$anomalyfilein, {
     
@@ -24,15 +29,12 @@ mod1_server <- function(input, output, session) {
     data$cf <-input$cf
     
     data_in <- read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
-    data_in$anom <- rep("Normal",length(data_in[1]))
+    data_in$Predicted_Label <- rep("Normal",length(data_in[1]))
     
+    data$cols <-  base::colnames(data_in)[1:(length(data_in)-1)]
     data$df <- data_in
-    validate(
-      need(!is.null(data$df), "Please upload your data"),
-      need(is.data.frame(data$df), data$df)
-    )
-    # data$metrics <- c(find_custom_metrics(data$df))
-  }, priority = 20)
+
+  }, priority = 30)
   
   observeEvent(input$cf, {
     req(input$cf)
@@ -61,40 +63,48 @@ mod1_server <- function(input, output, session) {
                                                   $("td", row).css("background", "#994141");
                                                   $("td", row).css("color", "white");}}',toString(length(data$df))))
                   )
-  ))
-  
-  output$ruletable <- DT::renderDataTable(DT::datatable({
-    req(data$tree_obj)
-    tree <- data$tree_obj
-    data$rule_table <- get_rule_table(tree)
-  },escape = F
-  ,fillContainer = T
-  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,
-                  rowCallback = DT::JS(sprintf('function(row, data) {
-                                          if (String(data[%s]).trim() == "Anomaly"  ){
-                                                  $("td", row).css("background", "#994141");
-                                                  $("td", row).css("color", "white");}}',toString(1)))
+        )
   )
-  ))
   
+  
+  output$colSelection <- renderUI({
+    pickerInput(
+      inputId = "user_selected_columns", 
+      label = "Select One or Multiple Columns", 
+      choices = data$cols, 
+      options = list(
+        `actions-box` = TRUE,
+        `style`="background-color:white; color:black"
+      ), 
+      multiple = TRUE
+    )
+  })
+  
+  observeEvent(input$user_selected_columns, {
+    selected_cols <- input$user_selected_columns
+    data$selected_cols <- c(selected_cols,"Predicted_Label")
+  }, priority = 30)
   
   output$pairplot <- renderPlot({
+    validate(
+      need(!is.null(data$df), "Please upload your data first"),
+      need(length(input$user_selected_columns) > 1,"Please Select atleast 2 Metrics/ Columns for pair plot")
+    )
     req(data$df)
-    req(input$lb)
-    req(input$ub)
     
-    data_in <- data$df
-    pch <- rep(".", length(data_in[input$lb]))
-    col <- rep("blue", length(data_in[input$lb]))
+    data_in <- data$df[data$selected_cols]
+    pch <- rep(".", length(data_in[1]))
+    col <- rep("blue", length(data_in[1]))
     
     if (!is.null(data$plot)){
-      pch <- if_else(data_in$anom == "Anomaly", "X", "." )
-      col <- if_else(data_in$anom == "Anomaly", "red", "blue" )
+      pch <- if_else(data_in$Predicted_Label == "Anomaly", "X", "." )
+      col <- if_else(data_in$Predicted_Label == "Anomaly", "red", "blue" )
       }
     
-    data$pairplot <- pairs(data_in[input$lb:input$ub], pch=pch, col=col)
+    data$pairplot <- pairs(data_in[input$user_selected_columns], pch=pch, col=col)
     data$pairplot
   })
+  
   
   fetchplot <- observeEvent(input$go, {
     req(data$df)
@@ -105,30 +115,33 @@ mod1_server <- function(input, output, session) {
       waitress$inc(10) # increase by 10%
       Sys.sleep(.1)
     }
-    data$plot <- get_anomaly_plot(data$df)
+    input <- data$df[input$user_selected_columns]
+    data$plot <- train_isoforest_anomaly_plot(input)
     waitress$close() # hide when done
   }, priority = 10)
   
   output$plot <- renderPlotly({
+    validate(
+      need(!is.null(data$plot), "Please press the plot button to run the model and plot results.")
+    )
     req(data$plot)
     fig <- data$plot
     fig
   })
 
   output$tree <- renderVisNetwork({
-    # minimal example
     req(data$plot)
-    data_in <- data$df
-    data$tree_obj <- build_tree(data_in)
+    data_in <- data$df[data$selected_cols]
+    tree <- rpart(Predicted_Label~., data=data_in, method="class")
+    data$tree_obj <- tree
     visTree(data$tree_obj, main = "Anomaly Classification Tree", width = "100%")
   })
 
-  build_tree <- function(data_in){
-    Anomaly <- as.vector(data_in$anom)
-    input_df <- cbind(data_in[input$lb:input$ub],Anomaly)
-    tree <- rpart(Anomaly~., data=input_df, method="class")
-    tree
-  }
+  # build_tree <- function(data_in){
+  #   Anomaly <- as.vector(data_in$Predicted_Label)
+  #   input_df <- cbind(data_in[input$lb:input$ub],Anomaly)
+  #   tree
+  # }
   
   get_rule_table <- function(rpart_tree_obj){
     
@@ -139,18 +152,31 @@ mod1_server <- function(input, output, session) {
     rules
   }
   
-  get_anomaly_plot <- function(df_input){
-    
-    # Subscripting input based on given indices
-    df_input <- df_input[input$lb:input$ub]
+  output$ruletable <- DT::renderDataTable(DT::datatable({
+    req(data$tree_obj)
+    tree <- data$tree_obj
+    data$rule_table <- get_rule_table(tree)
+  }
+  ,escape = F
+  ,fillContainer = T
+  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,
+                  rowCallback = DT::JS(sprintf('function(row, data) {
+                                          if (String(data[%s]).trim() == "Anomaly"  ){
+                                                  $("td", row).css("background", "#994141");
+                                                  $("td", row).css("color", "white");}}',toString(1)))
+      )
+    )
+  )
+  
+  train_isoforest_anomaly_plot <- function(df_input){
     
     #Initialising IF model
     model <- isolationForest$new(
       num_trees = 100,
       sample_size = base::round(nrow(df_input)*0.05 + 2),
       replace = T,
-      mtry = (length(colnames(df_input))),
-      seed = 123
+      mtry = base::ceiling(sqrt(length(df_input))),
+      seed = 12345
     )
     
     # fitting on input 
@@ -172,7 +198,14 @@ mod1_server <- function(input, output, session) {
     thresh<-median(boot_result)
 
     # Getting Principal Components
-    pca <- prcomp(df_input, scale. = T , center = T)
+    pca_input <- dplyr::select_if(df_input, is.numeric)
+    
+    if(colnames(pca_input) != colnames(df_input)){
+      showNotification(type="warning", duration=10,
+        "Note: The Selected columns seem to contain non-numeric type. Such columns will not be used for computation on PCA plots ")
+    }
+    
+    pca <- prcomp(pca_input, scale. = T , center = T)
     pcainfo <-  summary(pca)
 
     x <- as.vector(pca[["x"]][,1])
@@ -193,7 +226,7 @@ mod1_server <- function(input, output, session) {
     ))
     
     df_input <-  data$df 
-    df_input$anom <- pca_df$anom
+    df_input$Predicted_Label <- pca_df$anom
     data$df <- df_input
     
     fig

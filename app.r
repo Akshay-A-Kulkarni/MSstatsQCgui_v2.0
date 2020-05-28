@@ -130,8 +130,7 @@ home_page <- fluidPage(theme = 'cosmo.min.css',
                fluidPage(style = "width:80%; padding-top:8%;font-family:Open Sans;font-size:20px;",
 
                        fluidRow(
-                          column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center"),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))
-                                ),
+                          column(12, div(style="padding-top:5%;", h1(strong('MSstatsQC'), align="center"),h4('System suitability monitoring and quality control for proteomic experiments',align="center")))),
                        fluidRow( br(),br(),br(),br(),
                          fluidRow(
                            column(6,wellPanel(style=cardCSS, mod1p,br(),br())),
