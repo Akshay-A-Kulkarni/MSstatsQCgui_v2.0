@@ -9,10 +9,12 @@ mod2_server <- function(input, output, session) {
   
   
   ############################ MSstatsQCgui  ###########################
-  data <- reactiveValues(df = NULL, guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
+  data <- reactiveValues(df = NULL, mod2_upload_msg1 ="Upload Data or Try the Example",mod2_upload_msg2 ="Upload Data or Try the Example",
+                         guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
   
   observeEvent(input$filein, {
     file1 <- input$filein
+    data$mod2_upload_msg1 <- file1$name
     data$guide <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
     # data$guide <- read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
     
@@ -27,6 +29,8 @@ mod2_server <- function(input, output, session) {
   
   observeEvent(input$testin, {
     file2 <- input$testin
+    data$mod2_upload_msg2 <- file2$name
+    
     data$test <- input_checking(read.csv(file=file2$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
     # data$test <- read.csv(file=file2$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
     
@@ -45,17 +49,25 @@ mod2_server <- function(input, output, session) {
   }, priority = 40)
   
   
-  # observeEvent(input$sample_button, {
-  #   data$df <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54.csv"))
-  #   # data$test <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_TEST.csv"))
-  # 
-  #   validate(
-  #     need(!is.null(data$df), "Please upload your data"),
-  #     need(is.data.frame(data$df), data$df)
-  #   )
-  # 
-  #   data$metrics <- c(find_custom_metrics(data$df))
-  # }, priority = 20)
+  observeEvent(input$run_method, {
+
+    waitress <- Waitress$new("#module2-results", theme = "overlay-percent")
+    for(i in 1:10){
+      waitress$inc(10) # increase by 10%
+      Sys.sleep(.1)
+    }
+    if (input$method_selection == 'MSstatsQC-ML'){
+      hideTab(inputId = "module2-results", target = "spc1")
+      hideTab(inputId = "module2-results", target = "spc2")
+      showTab(inputId = "module2-results", target = "ml1")
+    }
+    else{
+      showTab(inputId = "module2-results", target = "spc1")
+      showTab(inputId = "module2-results", target = "spc2")
+      hideTab(inputId = "module2-results", target = "ml1")    
+      }
+    waitress$close() # hide when done
+  }, priority = 20)
   
   observeEvent(input$sample_button, {
     data$guide <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_GUIDE.csv", stringsAsFactors = T))
@@ -66,21 +78,31 @@ mod2_server <- function(input, output, session) {
     df1 <- rbind(guideset,testset)
 
     data$df <- input_checking(df1)
-
-    validate(
-      need(!is.null(data$df), "Please upload your data"),
-      need(is.data.frame(data$df), data$df)
-    )
+    data$mod2_upload_msg1 <- "Example loaded"
+    data$mod2_upload_msg2 <- "Example loaded"
 
     data$metrics <- c(find_custom_metrics(data$df))
   }, priority = 20
 
   )
 
+  output$mod2_upload_component1 <- renderUI({
+    fileInput("filein", label= p(strong("Guide Data")), accept = c(".csv"), placeholder = data$mod2_upload_msg1)
+  })
+  
+  output$mod2_upload_component2 <- renderUI({
+    fileInput("testin", label= p(strong("Test Data")), accept = c(".csv"), placeholder = data$mod2_upload_msg2)
+  })
   
   observeEvent(input$clear_button, {
     data$df <- NULL
     data$metrics <- NULL
+    data$guide <-  NULL
+    data$test <-  NULL
+    data$L <-  NULL
+    data$U <- NULL
+    data$mod2_upload_msg1 ="Upload Data or Try the Example"
+    data$mod2_upload_msg2 ="Upload Data or Try the Example"
   }, priority = 20)
   
   

@@ -15,10 +15,10 @@ methods_ui <-  fluidRow(
                   ),
            column(9,
                   column(4,
-                         wellPanel( h4("SPC | ML"),
+                         wellPanel(p(strong("Method Selection")),
                             prettyRadioButtons(
                               inputId = "method_selection",
-                              label = "Choose a Method:", 
+                              label = p("Choose a Method:"), 
                               choices = c("MSstatsQC-SPC", "MSstatsQC-ML"),
                               icon = icon("check"), 
                               bigger = TRUE,
@@ -38,23 +38,25 @@ methods_ui <-  fluidRow(
                                   condition = "input.method_selection == 'MSstatsQC-ML'",
                                   prettySwitch(
                                     inputId = "sim_button",
-                                    label = "Simulate Obs", 
+                                    label = "Generate Extra Obs", 
                                     status = "success",
                                     fill = TRUE
                                   )
                                   ) ,         
                          conditionalPanel(
-                           condition = "input.sim_button",
-                           p('Using Simulation to generate out of control obs'),
-                           numericInput(label = "Simuation size",inputId="sim_size", value = 100)
+                           condition = "input.sim_button && input.method_selection == 'MSstatsQC-ML'",
+                           span('Using Simulation to generate more failing runs'),
+                           numericInput(label = "Simuation size", inputId="sim_size", value = 100)
                          )
                      )
                   )
                  ),
                  column(4,
                         wellPanel(
-                          p("Configure Setting and Press the button below to generate results"),
-                          actionButton(inputId ="run_method", label = "Generate Plots !")
+                          p("Configure Previous Settings and Press the button below to generate results !"),
+                          br(),
+                          br(),
+                          actionButton(inputId ="run_method", label = "Generate Plots")
                         
                         )
                    

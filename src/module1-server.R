@@ -10,6 +10,7 @@ mod1_server <- function(input, output, session) {
   data <- reactiveValues(
                     df = NULL,
                     cols=NULL, 
+                    mod1_uploadmsg="Upload Data or Try the Example",
                     selected_cols=NULL, 
                     pairplot = NULL , 
                     plot = NULL, 
@@ -25,10 +26,11 @@ mod1_server <- function(input, output, session) {
   
   observeEvent(input$anomalyfilein, {
     
-    file1 <- input$anomalyfilein
+    user_upload <- input$anomalyfilein
+    data$mod1_uploadmsg <-  user_upload$name
     data$cf <-input$cf
     
-    data_in <- read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
+    data_in <- read.csv(file=user_upload$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
     data_in$Predicted_Label <- rep("Normal",length(data_in[1]))
     
     data$cols <-  base::colnames(data_in)[1:(length(data_in)-1)]
@@ -36,19 +38,51 @@ mod1_server <- function(input, output, session) {
 
   }, priority = 30)
   
+  
+  observeEvent(input$mod1_example, {
+    data$mod1_uploadmsg <- "Example Dataset loaded"
+    
+    data$cf <-input$cf
+    
+    data_in <- read.csv("./Datasets/anomaly_example_delta5.csv", header=TRUE, stringsAsFactors=TRUE)
+
+    data_in$Predicted_Label <- rep("Normal",length(data_in[1]))
+    
+    data$cols <-  base::colnames(data_in)[1:(length(data_in)-1)]
+    data$df <- data_in
+  }, priority = 30
+
+  )
+  
+  
+  output$mod1_upload_component <- renderUI({
+    fileInput("anomalyfilein", label= strong("Upload Dataset"), placeholder = data$mod1_uploadmsg, accept = c(".csv"))
+  })
+  
   observeEvent(input$cf, {
     req(input$cf)
-    feedbackWarning("cf", input$cf > 0.5, text = "Contamination Factor is High" ,
+    feedbackWarning("cf", (input$cf > 0.5 & input$cf < 1) , text = "Contamination Factor is High" ,
                     color = "#F89406", icon = icon("warning-sign", lib ="glyphicon"))
-  
+    
   }) 
+  
+  
+  
 
   observeEvent(input$clear_button, {
     
     data$df <- NULL
     data$plot <- NULL
+    data$mod1_uploadmsg <- "Upload Data or Try the Example"
+    data$selected_cols <- NULL
+    data$pairplot <-  NULL 
+    data$plot <-  NULL
+    data$cf <-  NULL 
+    data$tree_obj <-  NULL
+    data$rule_table <-  NULL
     waitress <- NULL
-  }, priority = 30)
+  }
+  , priority = 30)
   
   
   output$table <- DT::renderDataTable(DT::datatable({
@@ -200,7 +234,7 @@ mod1_server <- function(input, output, session) {
     # Getting Principal Components
     pca_input <- dplyr::select_if(df_input, is.numeric)
     
-    if(colnames(pca_input) != colnames(df_input)){
+    if(length(pca_input) != length(df_input)){
       showNotification(type="warning", duration=10,
         "Note: The Selected columns seem to contain non-numeric type. Such columns will not be used for computation on PCA plots ")
     }

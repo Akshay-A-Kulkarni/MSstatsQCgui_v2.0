@@ -5,10 +5,10 @@ input_section_ui <- fluidRow(
            p(strong("Upload File:")),
            p("Upload your data (Comma-separated (*.csv) QC file format)"),
            p("To see acceptable example data, look at", strong("Help"),"tab"),
-           fluidRow(column(9,fileInput("filein", label= p(strong("Guide Data")), accept = c(".csv"))),
+           fluidRow(column(9,uiOutput("mod2_upload_component1")),
                     column(3,br(),div(style='padding-top:15px',tipify(actionButton("showguide", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Guideset")))
            ),
-           fluidRow(column(9,fileInput("testin", label= p(strong("Test Data")), accept = c(".csv"))),
+           fluidRow(column(9,uiOutput("mod2_upload_component2")),
                     column(3,br(),div(style='padding-top:15px',tipify(actionButton("showtest", "", icon = icon("fullscreen", lib = "glyphicon")),"Click to View Testset")))
            ),
          ),

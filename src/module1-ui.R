@@ -29,10 +29,10 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                 divider("Input and Parameter settings","user-cog",0),
                                 br(),br(),
                                 wellPanel(fluidRow(
-                                  column(3,div(fileInput("anomalyfilein", label= p(strong("Upload Dataset")), accept = c(".csv")))),
-                                  column(4,div(style='line-height: 2;',uiOutput("colSelection"))),
-                                  column(2,div(style='line-height: 2;',numericInput("cf", "Contamination Factor:",min = 0, max = 1,value = 0.05))),
-                                  column(2, offset=1,
+                                  column(3,div(uiOutput("mod1_upload_component"), fluidRow(column(6,actionButton("mod1_example", "Load Example Data")),column(6,p("Upload your data in *.csv format"))))),
+                                  column(4,div(uiOutput("colSelection"))),
+                                  column(3,div(numericInput("cf", "Contamination Factor [0 ≤ CF ≤ 1]:",min = 0, max = 1,value = 0.05))),
+                                  column(1,
                                     div(
                                     actionGroupButtons(
                                       c("go", "clear_button", "report"),
@@ -50,7 +50,7 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                   column(6,
                                          fluidPage(
                                            tabsetPanel(id = 'inPlotSet',
-                                                  tabPanel(value  = 'pairplottab',title = "Original Plot", plotOutput('pairplot',height='60vh')),
+                                                  tabPanel(value = 'pairplottab',title = "Original Plot", plotOutput('pairplot',height='60vh')),
                                                   tabPanel(value = 'pcaplottab',title = "PCA Plot", div(id = "loadpca",plotlyOutput('plot',height='60vh'))),
                                                   tabPanel(value = 'treeplot', title = "Tree Plot", visNetworkOutput("tree",height='60vh')),
                                                   tabPanel(value = 'ruletable', title = "Extracted Rules", DT::dataTableOutput("ruletable", height ="60vh"))
