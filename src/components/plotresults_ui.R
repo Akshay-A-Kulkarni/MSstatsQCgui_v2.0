@@ -5,7 +5,8 @@ plotresults_ui <- fluidRow(style="height:50vh;",column(offset=1,10,
                        tags$head(tags$style(type="text/css")),
                        br(),
                        conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                                        tags$div("It may take a while to load the plots, please wait...",
+                                        tags$div(style="display: flex;justify-content: center;align-items: center",
+                                                 "It may take a while to load the plots, please wait...",
                                                  id="loadmessage")),
                        sidebarLayout(
                          sidebarPanel(
@@ -18,7 +19,8 @@ plotresults_ui <- fluidRow(style="height:50vh;",column(offset=1,10,
               tabPanel(title = "Detailed performance: plot summaries",value = 'spc2',
                        tags$head(tags$style(type="text/css")),
                        conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                                        tags$div("It may take a while to load the plots, please wait...",
+                                        tags$div(style="display: flex;justify-content: center;align-items: center",
+                                                 "It may take a while to load the plots, please wait...",
                                                  id="loadmessage")),
                        fluidPage(
                          fluidRow(
@@ -45,7 +47,8 @@ plotresults_ui <- fluidRow(style="height:50vh;",column(offset=1,10,
                        tags$head(tags$style(type="text/css")),
                        br(),
                        conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                                        tags$div("It may take a while to load the plots, please wait...",
+                                        tags$div(style="display: flex;justify-content: center;align-items: center",
+                                                 "It may take a while to load the plots, please wait...",
                                                  id="loadmessage")),
                        fluidPage(plotOutput("ml_heat_map"))
               )

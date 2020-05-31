@@ -37,14 +37,14 @@ methods_ui <-  fluidRow(
                                 conditionalPanel(
                                   condition = "input.method_selection == 'MSstatsQC-ML'",
                                   prettySwitch(
-                                    inputId = "sim_button",
+                                    inputId = "use_sim_button",
                                     label = "Generate Extra Obs", 
                                     status = "success",
                                     fill = TRUE
                                   )
                                   ) ,         
                          conditionalPanel(
-                           condition = "input.sim_button && input.method_selection == 'MSstatsQC-ML'",
+                           condition = "input.use_sim_button && input.method_selection == 'MSstatsQC-ML'",
                            span('Using Simulation to generate more failing runs'),
                            numericInput(label = "Simuation size", inputId="sim_size", value = 100)
                          )

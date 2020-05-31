@@ -7,6 +7,9 @@ mod2_server <- function(input, output, session) {
       change_page("/")}
   })
   
+  hideTab(inputId = "module2-results", target = "spc1", session = getDefaultReactiveDomain())
+  hideTab(inputId = "module2-results", target = "spc2", session = getDefaultReactiveDomain())
+  hideTab(inputId = "module2-results", target = "ml1", session = getDefaultReactiveDomain())
   
   ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, mod2_upload_msg1 ="Upload Data or Try the Example",mod2_upload_msg2 ="Upload Data or Try the Example",
@@ -499,14 +502,11 @@ mod2_server <- function(input, output, session) {
   }, height = my_height)
   ############################# heat_map in Summary tab #############################################
   output$heat_map <- renderPlot({
-    prodata <- data$df
-    
     validate(
-      need(!is.null(prodata), "Please upload your data"),
-      need(is.data.frame(prodata), prodata),
-      need(!is.null(prodata$AcquiredTime),"To view heatmaps, the dataset should include Acquired Time column."),
-      need(length(input$user_selected_metrics) != 0,"Please first select metrics and create a decision rule")
-
+      need(!is.null(data$df), "Please upload your data"),
+      need(is.data.frame(data$df), data$df),
+      need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule"),
+      need(!is.null(data$df$AcquiredTime),"To view heatmaps, the dataset should include Acquired Time column.")
     )
     
     peptideThresholdRed <- (as.numeric(input$threshold_peptide_red))/100
@@ -551,31 +551,54 @@ mod2_server <- function(input, output, session) {
   }, height = heatmap_height)
   
   
-  ############################# heat_map in Summary tab #############################################
+  ############################# ml-heat_map in Summary tab #############################################
+  
+
+
   output$ml_heat_map <- renderPlot({
     guide.set <- data$guide
     test.set <- data$test
-    
     validate(
       need(!is.null(guide.set), "Please upload your train data"),
       need(is.data.frame(guide.set), guide.set),
       need(!is.null(test.set), "Please upload your test data"),
       need(is.data.frame(test.set), test.set),
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
-      
     )
     
+    # Take a dependency on input$goButton
+    input$run_method
+    
+    # Use isolate() to avoid dependency on all other controls
+    user_sim_bool <- isolate(input$use_sim_button)
+    user_sim_size <- isolate(input$sim_size)
+    
+    
+    if (input$run_method == 0) { return() } 
+  
+    
    
+    showNotification(type="warning", duration=10,
+      "Training the RF model with supplied settings - [This may take a while]")
     
-    train_model <- MSstatsQC.ML.trainR(guide.set, sim.size=100)
+    trained_model <- MSstatsQC.ML.trainR(guide.set, use_simulation=user_sim_bool, sim.size=user_sim_size)
+    
+    showNotification(type="message", duration=5,
+                     "Model Training Complete !")
 
-    ML_plots <- MSstatsQC.ML.testR(test.set, guide.set, rf_model = train_model)
+
+    showNotification(type="warning", duration=10,
+                    "Starting the Test phase and Generating plots - [This may take a while]")
     
-    ML_plots$dec
-  }, height = heatmap_height)
+    ML_plots <- MSstatsQC.ML.testR(test.set, guide.set, rf_model = trained_model)
+    
+    return(ML_plots$dec)
+  
+  }, 
+  height = heatmap_height)
   
   session$onSessionEnded(function() {
-    h2o::h2o.shutdown(prompt = F)
+    # h2o::h2o.shutdown(prompt = F)
     stopApp()
   })
   

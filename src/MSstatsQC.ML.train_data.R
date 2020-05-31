@@ -174,11 +174,11 @@ QcClassifier_data_annotated <- function(guide.set, guide.set.annotations){
   
   data<-list()
   
-  for(i in 1:nlevels(guide.set.annotations$peptide)){
+  for(i in 1:nlevels(guide.set.annotations$Precursor)){
     
-    guide.set.annotations.scale <- guide.set.annotations[guide.set.annotations$peptide==levels(guide.set.annotations$peptide)[i],c(1, 3:(ncol(guide.set.annotations)))]
+    guide.set.annotations.scale <- guide.set.annotations[guide.set.annotations$Precursor==levels(guide.set.annotations$Precursor)[i],c(1, 3:(ncol(guide.set.annotations)))]
     
-    guide.set.new<-guide.set[guide.set$peptide==levels(guide.set$peptide)[i],c(3:(ncol(guide.set)))]
+    guide.set.new<-guide.set[guide.set$Precursor==levels(guide.set$Precursor)[i],c(3:(ncol(guide.set)))]
     
     for(k in 2:ncol(guide.set.annotations.scale)){
       guide.set.annotations.scale[,k]=(guide.set.annotations.scale[,k]-median(guide.set.new[,k-1]))/mad(guide.set.new[,k-1])

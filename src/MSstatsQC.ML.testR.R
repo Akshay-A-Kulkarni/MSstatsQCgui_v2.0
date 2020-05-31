@@ -140,10 +140,7 @@
   message(paste("Drew the plots for interpretation"))
   
   plots <- list(dec=decision.map,interp=interpret.plots )
-  
-  # if (address!=FALSE) {
-  #   dev.off()
-  # }
+
   return(plots)
 }
 

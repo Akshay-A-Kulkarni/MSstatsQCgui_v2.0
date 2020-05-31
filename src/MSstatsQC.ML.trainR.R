@@ -16,7 +16,7 @@
 #' # Calculate change point statistics
 #' QcClassifierTrain(guide.set = sampleData[1:20,])
 
-MSstatsQC.ML.trainR<- function(guide.set, sim.size, address="", guide.set.annotations=NULL){
+MSstatsQC.ML.trainR<- function(guide.set, use_simulation, sim.size, address="", guide.set.annotations=NULL){
   
   source("src/auto_add_features.R")
   source("src/sample_density_function.R")
@@ -34,6 +34,7 @@ MSstatsQC.ML.trainR<- function(guide.set, sim.size, address="", guide.set.annota
   #optional 
   peptide.colname <-"Precursor"
   
+  if (use_simulation){
   d1 <- QcClassifier_data_step(guide.set,nmetric,factor.names,sim.size*1,peptide.colname, L=3, U=10)
   d2 <- QcClassifier_data_var(guide.set,nmetric,factor.names,sim.size*1,peptide.colname, L=3, U=10)
   d3 <- QcClassifier_data_linear(guide.set,nmetric,factor.names,sim.size*1,peptide.colname, L=3, U=10)
@@ -41,11 +42,26 @@ MSstatsQC.ML.trainR<- function(guide.set, sim.size, address="", guide.set.annota
   d4 <- QcClassifier_data_step(guide.set,nmetric,factor.names,sim.size*1,peptide.colname, L=-10, U=-3)
   d5 <- QcClassifier_data_var(guide.set,nmetric,factor.names,sim.size*1,peptide.colname, L=-10, U=-3)
   d6 <- QcClassifier_data_linear(guide.set,nmetric,factor.names,sim.size*1,peptide.colname, L=-10, U=-3)
-  if (is.null(dim(guide.set.annotations))==TRUE) {d<-rbind(d1,d2,d3, d4,d5,d6)}
+  
+  ## Appending all simulations
+    if (is.null(dim(guide.set.annotations))==TRUE){
+      d<-rbind(d1,d2,d3, d4,d5,d6)
+    }
+  
+    else{
+      d7 <- QcClassifier_data_annotated(guide.set, guide.set.annotations)
+      d <- rbind(d1,d2, d3, d4,d5,d6, d7)
+    }
+  }
   else{
-  d7 <- QcClassifier_data_annotated(guide.set, guide.set.annotations)
-  #d<-rbind(d1,d2, d3, d4,d5,d6, d7)}
-  d<-rbind(d1,d2, d3, d4,d5,d6, d7)}
+    feature_df <- add_features(guide.set[,4:ncol(guide.set)])
+    feature_df <- feature_df[,order(names(feature_df))]
+    
+    RESPONSE <- "PASS"
+    d <- cbind(feature_df,RESPONSE)
+  }
+  
+
   ## 80% of the sample size
   smp_size <- floor(0.8 * nrow(d))
   
@@ -53,35 +69,30 @@ MSstatsQC.ML.trainR<- function(guide.set, sim.size, address="", guide.set.annota
   train_ind <- sample(seq_len(nrow(d)), size = smp_size)
   
   train <- d[train_ind,]
-  test <- d[-train_ind,]
+  validation <- d[-train_ind,]
   
   #launch h2o cluster
   localH2O <- h2o.init(nthreads = -1)
   
   #import r objects to h2o cloud
   train_h2o <- as.h2o(train)
-  test_h2o <- as.h2o(test)
+  validation_h2o <- as.h2o(validation)
   
   ## run our first predictive model
-  rf_model <- h2o.randomForest(         ## h2o.randomForest function
-    training_frame = train_h2o,        ## the H2O frame for training
-    validation_frame = test_h2o,      ## the H2O frame for validation (not required)
-    x= colnames(train_h2o),
-    y= "RESPONSE",
-    model_id = "rf_model",    ## name the model in H2O
+  rf_model <- h2o.randomForest(             ## h2o.randomForest function
+    training_frame = train_h2o,             ## the H2O frame for training
+    validation_frame = validation_h2o,      ## the H2O frame for validation (not required)
+    x = colnames(train_h2o),
+    y = "RESPONSE",
+    model_id = "rf_model",                  ## name the model in H2O
     nfolds = 10,
-    ntrees = 100,                  ##   not required, but helps use Flow
-    ## use a maximum of 200 trees to create the
-    ##  random forest model. The default is 50.
-    stopping_rounds = 2,           ## Stop fitting new trees when the 2-tree
-    ##  average is within 0.001 (default) of 
-    ##  the prior two 2-tree averages.
-    ##  Can be thought of as a convergence setting
+    ntrees = 100,                           
+    stopping_rounds = 2,                    ## Stop fitting new trees when the 2-tree average is within 0.001 (default) of the prior two 2-tree averages.Can be thought of as a convergence setting
     score_each_iteration = TRUE,
     max_depth = 20,
     seed = 123) 
   
   message(paste("Constructed the RF model"))
-  print(rf_model)
-  
+  # print(rf_model)
+  return(rf_model)
 }
