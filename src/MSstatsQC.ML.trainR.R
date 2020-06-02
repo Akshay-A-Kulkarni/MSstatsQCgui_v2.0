@@ -22,7 +22,7 @@ MSstatsQC.ML.trainR<- function(guide.set, use_simulation, sim.size, address="", 
   source("src/sample_density_function.R")
   source("src/boxcox_transformation.R")
   source("src/robust_scaling.R")
-  source("src/MSStatsQC.ML.train_data.R")
+  source("src/MSstatsQC.ML.train_data.R")
   
   
   #function inputs

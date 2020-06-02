@@ -43,19 +43,19 @@ library(lime)
 
 
 # Sourcing all modules pages to the main routing app.
-source("src/module1-ui.R")
-source("src/module1-server.R")
-source("src/module2-ui.R")
-source("src/module2-server.R")
-source("src/module3-ui.R")
-source("src/module3-server.R")
-source("src/plot-functions.R")
-source("src/data-validation.R")
-source("src/helper-functions.R")
-source("src/QCMetrics.R")
+source("./src/module1-ui.R")
+source("./src/module1-server.R")
+source("./src/module2-ui.R")
+source("./src/module2-server.R")
+source("./src/module3-ui.R")
+source("./src/module3-server.R")
+source("./src/plot-functions.R")
+source("./src/data-validation.R")
+source("./src/helper-functions.R")
+source("./src/QCMetrics.R")
 
-source("src/MSStatsQC.ML.trainR.R")
-source("src/MSStatsQC.ML.testR.R")
+source("./src/MSstatsQC.ML.trainR.R")
+source("./src/MSstatsQC.ML.testR.R")
 
 cardCSS <- "box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
             border-radius: 0.5rem;
