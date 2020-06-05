@@ -509,6 +509,7 @@ mod2_server <- function(input, output, session) {
       need(!is.null(data$df$AcquiredTime),"To view heatmaps, the dataset should include Acquired Time column.")
     )
     
+    prodata <- data$df
     peptideThresholdRed <- (as.numeric(input$threshold_peptide_red))/100
     peptideThresholdYellow <- (as.numeric(input$threshold_peptide_yellow))/100
 
