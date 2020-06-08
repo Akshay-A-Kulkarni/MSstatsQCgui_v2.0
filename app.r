@@ -28,11 +28,11 @@ library(h2o)
 library(MASS)
 library(ggplot2)
 library(stats)
-library(FrF2) 
+library(FrF2)
 library(car)
 library(reshape2)
 library(lime)
- 
+
 # if (!"package:MSstatsQCgui" %in% search())
 #   import_fs("MSstatsQCgui", incl = c("shiny","shinyBS","dplyr","plotly","RecordLinkage","ggExtra","gridExtra","grid"))
 
@@ -67,18 +67,18 @@ cardCSS <- "box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 
 
 # Main Home Page cards
 
-mod1p <- div(h4(strong("Individual experiments")),br(),
+mod1p <- div(h4(strong("Anomality detection without a guide set")),br(),
              fluidRow(
                column(5,img(src='mod1.png',width="100%")),
-               column(7,p("Anomality detection without a guide set"),br(),
+               column(7,p(""),br(),
                       fluidRow(column(3, offset = 0,actionButton("switch_mod1", "Launch"))),br(),
                       fluidRow(column(2, offset = 0,actionButton("help_mod1", "More Info"))))
              ),
 )
-mod2p <- div(h4(strong("Longitudinal tracking")),br(),
+mod2p <- div(h4(strong("Longitudinal benchmarking with a guide set")),br(),
              fluidRow(
                column(5,img(src='mod2.png',width="95%")),
-               column(7,p("Longitudinal benchmarking with a guide set"),br(),
+               column(7,p(""),br(),
                       fluidRow(column(3, offset = 0,actionButton("switch_mod2", "Launch"))),br(),
                       fluidRow(column(2, offset = 0,actionButton("help_mod2", "More Info")))
                )
@@ -117,12 +117,12 @@ home_page <- fluidPage(theme = 'cosmo.min.css',
                                             div(style="padding-top:3.5%; display:inline-block",
                                             actionBttn(
                                              inputId = "temporary1",
-                                             label = a("Help", href="https://google.com", target="_blank") , 
+                                             label = a("Help", href="https://google.com", target="_blank") ,
                                              style = "bordered",
                                              color = "success"),
                                             actionBttn(
                                               inputId = "temporary2",
-                                              label = a("MSstatsQC", href="https://msstats.org/MSstatsQC/", target="_blank") , 
+                                              label = a("MSstatsQC", href="https://msstats.org/MSstatsQC/", target="_blank") ,
                                               style = "bordered",
                                               color = "success")))
                                            )),
@@ -145,7 +145,7 @@ home_page <- fluidPage(theme = 'cosmo.min.css',
 
 # Callbacks on the server side for the sample pages
 home_server <- function(input, output, session) {
-  
+
   observeEvent(input$switch_mod2, {
     if (!is_page("module2")) {
       change_page("module2")}
@@ -164,7 +164,7 @@ home_server <- function(input, output, session) {
     if (!is_page("module1")) {
       change_page("module1")}
   })
-  
+
   observeEvent(input$help_mod1, {
     showModal(modalDialog(
       title = "More Info",
@@ -173,7 +173,7 @@ home_server <- function(input, output, session) {
       easyClose = TRUE
     ))
   })
-  
+
 }
 
 # Create routing. We provide routing path, a UI as well as a server-side callback for each page.
