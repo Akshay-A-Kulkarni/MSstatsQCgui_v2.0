@@ -266,22 +266,48 @@ mod1_server <- function(input, output, session) {
     fig
   }
   
+  output$report_tab <- renderUI({
+    validate(
+      need(!is.null(data$df), "Please upload your data first"),
+      need(!is.null(data$rule_table),"Please Run through the complete workflow in order to add comments and export plots")
+    )
+    
+    fluidRow(
+      column(10, offset=2,
+            div(
+              h3("Add any comments/descriptions for plots to be included in the report in the respective tex boxes."),
+              textAreaInput("pair_desc", "Pair Plot", rows = 2),
+              textAreaInput("pca_desc", "PCA Plot", rows = 2),
+              textAreaInput("tree_desc", "Tree Plot", rows = 2),
+              textAreaInput("rule_desc", "PCA Plot", rows = 2)              
+              
+              )
+      )
+    )
+    
+    
+  })
+  
   output$report <- downloadHandler(
     # For PDF output, change this to "report.pdf"
-    filename = "report.html",
+    filename = "MSStatsQC-Mod2Report.html",
     content = function(file) {
       # Copy the report file to a temporary directory before processing it, in
       # case we don't have write permissions.
       
-      tempReport <- file.path(tempdir(), "report.Rmd")
-      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      tempReport <- file.path(tempdir(), "MSStatsQC-Mod1Report.Rmd")
+      file.copy("MSStatsQC-Mod1Report.Rmd", tempReport, overwrite = TRUE)
       
       # Set up parameters to pass to Rmd document
       params <- list(
                      pair_plot = data$pairplot,
+                     pair_desc = input$pair_desc,
                      plotly_fig = data$plot,
+                     pca_desc=input$pca_desc,
                      tree_plot = data$tree_obj,
-                     rule_table = data$rule_table
+                     tree_desc = input$tree_desc,
+                     rule_table = data$rule_table,
+                     rule_desc = input$rule_desc
                      )
       
       # Knit the document, passing in the `params` list, and eval it in a

@@ -54,7 +54,11 @@ methods_ui <-  fluidRow(
                  column(4,
                         wellPanel(
                           p("Configure Previous Settings and Press the button below to generate results !"),
-                          br(),
+                          conditionalPanel(
+                            condition = "input.method_selection == 'MSstatsQC-ML' && !input.use_sim_button",
+                            span('Upload a data set with labeled failing runs for Model training.'),
+                            fileInput("anno_in", label= p(strong("Annotated Data")), accept = c(".csv"), placeholder = "Upload labeled failing runs")
+                          ),
                           br(),
                           actionButton(inputId ="run_method", label = "Generate Plots")
                         

@@ -7,13 +7,20 @@ mod2_server <- function(input, output, session) {
       change_page("/")}
   })
   
-  hideTab(inputId = "module2-results", target = "spc1", session = getDefaultReactiveDomain())
-  hideTab(inputId = "module2-results", target = "spc2", session = getDefaultReactiveDomain())
-  hideTab(inputId = "module2-results", target = "ml1", session = getDefaultReactiveDomain())
+  hideTab(inputId = "module2-results", target = "spc1" )
+  hideTab(inputId = "module2-results", target = "spc2")
+  hideTab(inputId = "module2-results", target = "ml1")
   
   ############################ MSstatsQCgui  ###########################
-  data <- reactiveValues(df = NULL, mod2_upload_msg1 ="Upload Data or Try the Example",mod2_upload_msg2 ="Upload Data or Try the Example",
-                         guide = NULL, test = NULL, metrics = NULL, L = NULL, U = NULL)
+  data <- reactiveValues(df = NULL, 
+                         mod2_upload_msg1 ="Upload Data or Try the Example",
+                         mod2_upload_msg2 ="Upload Data or Try the Example",
+                         guide = NULL, 
+                         test = NULL,
+                         anno = NULL,
+                         metrics = NULL, 
+                         L = NULL, 
+                         U = NULL)
   
   observeEvent(input$filein, {
     file1 <- input$filein
@@ -51,6 +58,18 @@ mod2_server <- function(input, output, session) {
     data$metrics <- c(find_custom_metrics(data$df))
   }, priority = 40)
   
+  observeEvent(input$anno_in, {
+    file3 <- input$anno_in
+    data$mod2_upload_msg2 <- file3$name
+    
+    data$anno <- input_checking(read.csv(file=file3$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
+    # data$test <- read.csv(file=file2$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE)
+    
+    validate(
+      need(!is.null(data$anno), "Please upload your data"),
+      need(is.data.frame(data$anno), data$anno)
+    )
+  }, priority = 40)
   
   observeEvent(input$run_method, {
 
@@ -73,8 +92,8 @@ mod2_server <- function(input, output, session) {
   }, priority = 20)
   
   observeEvent(input$sample_button, {
-    data$guide <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_GUIDE.csv", stringsAsFactors = T))
-    data$test <- input_checking(read.csv("./Datasets/Sampledata_CPTAC_Study_9_1_Site54_TEST.csv", stringsAsFactors = T))
+    data$guide <- input_checking(read.csv("./Datasets/simData_guide.csv", stringsAsFactors = T))
+    data$test <- input_checking(read.csv("./Datasets/simData_test.csv", stringsAsFactors = T))
     
     guideset <- data$guide
     testset <- data$test
@@ -102,11 +121,12 @@ mod2_server <- function(input, output, session) {
     data$metrics <- NULL
     data$guide <-  NULL
     data$test <-  NULL
+    data$anno <- NULL
     data$L <-  NULL
     data$U <- NULL
     data$mod2_upload_msg1 ="Upload Data or Try the Example"
     data$mod2_upload_msg2 ="Upload Data or Try the Example"
-  }, priority = 20)
+  }, priority = 40)
   
   
   output$guideview <- DT::renderDataTable(DT::datatable({
@@ -201,6 +221,7 @@ mod2_server <- function(input, output, session) {
     if(length(input$user_selected_metrics)>=1){ check_mark_green }
     else{ check_mark }
   })  
+  
   output$selectMeanSD <- renderUI({
     lapply(input$user_selected_metrics,
            function(x){
@@ -556,9 +577,10 @@ mod2_server <- function(input, output, session) {
   
 
 
-  output$ml_heat_map <- renderPlot({
+  output$ml_heat_map <- renderUI({
     guide.set <- data$guide
     test.set <- data$test
+    anno.set <- data$anno
     validate(
       need(!is.null(guide.set), "Please upload your train data"),
       need(is.data.frame(guide.set), guide.set),
@@ -567,22 +589,28 @@ mod2_server <- function(input, output, session) {
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
     
-    # Take a dependency on input$goButton
+    # Take a dependency on input$run_method
     input$run_method
-    
     # Use isolate() to avoid dependency on all other controls
     user_sim_bool <- isolate(input$use_sim_button)
     user_sim_size <- isolate(input$sim_size)
+    method <- isolate(input$method_selection)
+    
     
     
     if (input$run_method == 0) { return() } 
   
-    
-   
+  
     showNotification(type="warning", duration=10,
       "Training the RF model with supplied settings - [This may take a while]")
     
-    trained_model <- MSstatsQC.ML.trainR(guide.set, use_simulation=user_sim_bool, sim.size=user_sim_size)
+    if (input$run_method != 0 && method == "MSstatsQC-ML")
+    if (!is.null(anno.set)){
+      trained_model <- MSstatsQC.ML.trainR(guide.set, use_simulation=user_sim_bool, sim.size=user_sim_size, guide.set.annotations = anno.set)
+    }
+    else {
+      trained_model <- MSstatsQC.ML.trainR(guide.set, use_simulation=user_sim_bool, sim.size=user_sim_size)
+    }
     
     showNotification(type="message", duration=5,
                      "Model Training Complete !")
@@ -591,12 +619,25 @@ mod2_server <- function(input, output, session) {
     showNotification(type="warning", duration=10,
                     "Starting the Test phase and Generating plots - [This may take a while]")
     
-    ML_plots <- MSstatsQC.ML.testR(test.set, guide.set, rf_model = trained_model)
     
-    return(ML_plots$dec)
+
+
+    ML_plots <- MSstatsQC.ML.testR(test.set, guide.set, rf_model = trained_model)
+      
+      # Insert plot output objects the list
+      plot_output_list <- lapply(1:length(ML_plots), function(i) {
+        plotname <- paste("mlPlot", i, sep="")
+        plot_output_object <- plotOutput(plotname, height = 280, width = 250)
+        plot_output_object <- wellPanel(
+                                        fluidRow(renderPlot({ML_plots[[i]]}))
+                                        )
+      })
+      
+      do.call(tagList, plot_output_list) # needed to display properly.
+      
+      return(plot_output_list)
   
-  }, 
-  height = heatmap_height)
+  })
   
   session$onSessionEnded(function() {
     # h2o::h2o.shutdown(prompt = F)

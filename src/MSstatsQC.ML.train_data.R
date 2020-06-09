@@ -176,9 +176,9 @@ QcClassifier_data_annotated <- function(guide.set, guide.set.annotations){
   
   for(i in 1:nlevels(guide.set.annotations$Precursor)){
     
-    guide.set.annotations.scale <- guide.set.annotations[guide.set.annotations$Precursor==levels(guide.set.annotations$Precursor)[i],c(1, 3:(ncol(guide.set.annotations)))]
+    guide.set.annotations.scale <- guide.set.annotations[guide.set.annotations$Precursor==levels(guide.set.annotations$Precursor)[i],c(1, 4:(ncol(guide.set.annotations)))]
     
-    guide.set.new<-guide.set[guide.set$Precursor==levels(guide.set$Precursor)[i],c(3:(ncol(guide.set)))]
+    guide.set.new<-guide.set[guide.set$Precursor==levels(guide.set$Precursor)[i],c(4:(ncol(guide.set)))]
     
     for(k in 2:ncol(guide.set.annotations.scale)){
       guide.set.annotations.scale[,k]=(guide.set.annotations.scale[,k]-median(guide.set.new[,k-1]))/mad(guide.set.new[,k-1])
@@ -186,9 +186,11 @@ QcClassifier_data_annotated <- function(guide.set, guide.set.annotations){
     
     guide.set.new <- robust.scale(guide.set.new)
     
-    for(k in 2:ncol(guide.set.annotations.scale)){guide.set.annotations.scale[,k] <- bctrans.test((guide.set.new[,k-1]),guide.set.annotations.scale[,k])}
+    for(k in 2:ncol(guide.set.annotations.scale)){
+      guide.set.annotations.scale[,k] <- bctrans.test((guide.set.new[,k-1]),guide.set.annotations.scale[,k])
+    }
     
-    names(guide.set.annotations.scale) <- colnames(guide.set.annotations[,c(1,3:(ncol(guide.set.annotations)))])
+    names(guide.set.annotations.scale) <- colnames(guide.set.annotations[,c(1,4:(ncol(guide.set.annotations)))])
     
     data[[i]] <- add_features(guide.set.annotations.scale[,2:ncol(guide.set.annotations.scale)])
     

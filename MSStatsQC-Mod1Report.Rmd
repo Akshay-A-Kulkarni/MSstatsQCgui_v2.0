@@ -1,0 +1,79 @@
+---
+title: "report"
+date: "4/25/2020"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+params:
+  pair_plot: NA
+  pair_desc: NA
+  plotly_fig: NA
+  pca_desc: NA
+  tree_plot: NA 
+  tree_desc: NA 
+  rule_table: NA
+  rule_desc: NA 
+---
+
+
+## Using Parametrized RMD's for Custom Report Format
+
+```{r include=FALSE}
+library(rpart)
+library(visNetwork)
+library(DT)
+library(shiny)
+
+
+if("prettydoc" %in% rownames(installed.packages()) == FALSE) {install.packages("prettydoc")}
+
+knitr::opts_chunk$set(fig.align="center")
+options(DT.options = list(autoWidth = TRUE, autoHeight = TRUE))
+```
+
+### Using Markdown to format the doc easily
+
+# **MSstatsQC Framework Report**
+
+## Including Plots {PCA, TREE, RULES}
+
+We can also embed plots:
+
+### Pair Plot
+```{r, echo=FALSE}
+params$pair_plot
+params$pair_desc
+
+```
+
+### 3D PCA
+```{r, echo=FALSE}
+params$plotly_fig
+params$pca_desc
+
+```
+
+### Tree
+```{r, echo=FALSE}
+visTree(params$tree_plot, main = "Anomaly Classification Tree", width = "100%")
+params$tree_desc
+
+```
+
+### Rule Table
+
+```{r echo=FALSE}
+DT::datatable({params$rule_table}
+  ,escape = F
+  ,fillContainer = T
+  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,scrollY = FALSE,
+                  rowCallback = DT::JS(sprintf('function(row, data) {
+                                          if (String(data[%s]).trim() == "Anomaly"  ){
+                                                  $("td", row).css("background", "#994141");
+                                                  $("td", row).css("color", "white");}}',toString(1)))
+  )
+  )
+params$rule_desc
+```
+
+<code>MSstatsQC</code> is an open-source R package and Shiny web application for statistical monitoring of quality control (QC) samples produced by spectrometry-based proteomic experiments. <code>MSstatsQC</code> is available through <a href="www.msstats.org/msstatsqc">www.msstats.org/msstatsqc</a>.

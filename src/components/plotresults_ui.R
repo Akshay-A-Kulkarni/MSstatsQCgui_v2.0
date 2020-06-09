@@ -1,5 +1,6 @@
 plotresults_ui <- fluidRow(style="height:50vh;",column(offset=1,10,
   # fluidRow(h3("Plots & Results")),
+  conditionalPanel(condition = "input.run_method != 0",
   tabsetPanel(type = 'pill', id='module2-results',
               tabPanel(title = "Overall performance : SPC decision maps",value = 'spc1',
                        tags$head(tags$style(type="text/css")),
@@ -50,8 +51,9 @@ plotresults_ui <- fluidRow(style="height:50vh;",column(offset=1,10,
                                         tags$div(style="display: flex;justify-content: center;align-items: center",
                                                  "It may take a while to load the plots, please wait...",
                                                  id="loadmessage")),
-                       fluidPage(plotOutput("ml_heat_map"))
+                       fluidPage(uiOutput("ml_heat_map"))
               )
   )
+)
 )
 )

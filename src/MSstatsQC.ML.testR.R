@@ -131,17 +131,14 @@
           legend.position="bottom", panel.background = element_blank(),
           plot.background = element_blank(), plot.margin = unit(c(0.1,0,0,0), "cm"),
           axis.ticks.length = unit(0, "pt"))
-  print(decision.map)
-  
+
   message(paste("Drew the plot for final evaluation"))
-  
-  print(interpret.plots)
   
   message(paste("Drew the plots for interpretation"))
   
-  plots <- list(dec=decision.map,interp=interpret.plots )
+  interpret.plots[[length(interpret.plots)+1]] <- decision.map
 
-  return(plots)
+  return(interpret.plots)
 }
 
   

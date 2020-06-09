@@ -35,15 +35,20 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                   column(1,
                                     div(
                                     actionGroupButtons(
-                                      c("go", "clear_button", "report"),
-                                      c("Plot!", "Clear Data", "Generate report"),
+                                      c("go", "clear_button"),
+                                      c("Plot!", "Clear Data"),
                                       status = "default",
                                       size = "normal",
                                       direction = "vertical",
-                                    )))
+                                    ),
+                                    downloadButton("report", "Generate report")
+                                    
+                                    )
+                                    )
+                                  
                                 )),   
                                 br(),br(),br(),br(),
-                                divider("DataTable and Results","chart-bar",0), ### custom section header fucn from app.r
+                                divider("DataTable and Results","chart-bar",0), ### custom section header func from app.r
                                 br(),br(),
                                 fluidRow(
                                   column(6,wellPanel(DT::dataTableOutput("table", height ="60vh"))),
@@ -53,7 +58,9 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                                   tabPanel(value = 'pairplottab',title = "Original Plot", plotOutput('pairplot',height='60vh')),
                                                   tabPanel(value = 'pcaplottab',title = "PCA Plot", div(id = "loadpca",plotlyOutput('plot',height='60vh'))),
                                                   tabPanel(value = 'treeplot', title = "Tree Plot", visNetworkOutput("tree",height='60vh')),
-                                                  tabPanel(value = 'ruletable', title = "Extracted Rules", DT::dataTableOutput("ruletable", height ="60vh"))
+                                                  tabPanel(value = 'ruletable', title = "Extracted Rules", DT::dataTableOutput("ruletable", height ="60vh")),
+                                                  tabPanel(value = 'export_tab', title = "Export as Report", uiOutput("report_tab"))
+                                                  
                                                   )
                                               ),
                                          )

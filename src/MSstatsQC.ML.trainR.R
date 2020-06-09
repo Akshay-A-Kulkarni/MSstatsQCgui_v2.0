@@ -54,11 +54,17 @@ MSstatsQC.ML.trainR<- function(guide.set, use_simulation, sim.size, address="", 
     }
   }
   else{
-    feature_df <- add_features(guide.set[,4:ncol(guide.set)])
-    feature_df <- feature_df[,order(names(feature_df))]
+    full_df <- rbind(guide.set, guide.set.annotations)
+    full_df <- full_df %>% mutate(Annotations = if_else(Annotations != 'FAIL', 'PASS', 'FAIL'))
+
+    RESPONSE <- full_df$Annotations 
     
-    RESPONSE <- "PASS"
-    d <- cbind(feature_df,RESPONSE)
+    full_feature_df <- add_features(full_df[,4:ncol(full_df)])
+    full_feature_df <- full_feature_df[,order(names(full_feature_df))]
+    full_feature_df <- cbind(full_feature_df,RESPONSE)
+
+
+    d <-  full_feature_df
   }
   
 
