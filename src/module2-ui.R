@@ -10,6 +10,7 @@ source("src/components/about_page_ui.R")
 source("src/components/plotresults_ui.R")
 source("src/components/methods_ui.R")
 source("src/components/common_css.R")
+source("src/components/footer.R")
 
 
 mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(), 
@@ -47,6 +48,21 @@ mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(
                                       plotresults_ui,
                                     
                                       ######################################################
+                                    
+                                      # Report
+                                      fluidRow(
+                                        column(10, offset=2,
+                                               div(
+                                                 h3("Add any comments/descriptions for plots to be included in the report in the respective tex boxes."),
+                                                 textAreaInput("pair_desc", "Plot Description", rows = 2,cols = 4, placeholder = 'Add comments for plots here'),
+                                                 downloadButton("report2", "Generate report")
+                                                 
+                                               )
+                                        )
+                                      ),
+                                      # Footer
+                                      ######################################################
+                                      footer
    
                                     ),
                         navbarMenu("Control charts",

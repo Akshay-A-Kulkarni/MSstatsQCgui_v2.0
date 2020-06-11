@@ -53,7 +53,13 @@ methods_ui <-  fluidRow(
                  ),
                  column(4,
                         wellPanel(
-                          p("Configure Previous Settings and Press the button below to generate results !"),
+                        #   p("Configure Previous Settings and Press the button below to generate results !"),
+                        #   prettySwitch(
+                        #     inputId = "use_anno_button",
+                        #     label = "Use user annotations", 
+                        #     status = "success",
+                        #     fill = TRUE
+                        #   ),
                           conditionalPanel(
                             condition = "input.method_selection == 'MSstatsQC-ML' && !input.use_sim_button",
                             span('Upload a data set with labeled failing runs for Model training.'),

@@ -574,7 +574,6 @@ mod2_server <- function(input, output, session) {
   
   
   ############################# ml-heat_map in Summary tab #############################################
-  
 
 
   output$ml_heat_map <- renderUI({
@@ -600,11 +599,13 @@ mod2_server <- function(input, output, session) {
     
     if (input$run_method == 0) { return() } 
   
-  
+    else if(input$run_method != 0 && method == "MSstatsQC-ML"){
+      
+    
     showNotification(type="warning", duration=10,
       "Training the RF model with supplied settings - [This may take a while]")
     
-    if (input$run_method != 0 && method == "MSstatsQC-ML")
+
     if (!is.null(anno.set)){
       trained_model <- MSstatsQC.ML.trainR(guide.set, use_simulation=user_sim_bool, sim.size=user_sim_size, guide.set.annotations = anno.set)
     }
@@ -636,6 +637,11 @@ mod2_server <- function(input, output, session) {
       do.call(tagList, plot_output_list) # needed to display properly.
       
       return(plot_output_list)
+    }
+    
+    else{
+      return()
+    }
   
   })
   

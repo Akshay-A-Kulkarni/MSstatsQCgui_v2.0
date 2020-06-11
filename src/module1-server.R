@@ -100,6 +100,20 @@ mod1_server <- function(input, output, session) {
         )
   )
   
+  output$init_buttons <- renderUI({
+    if(is.null(data$selected_cols) || is.null(data$df)){
+      return(div(p(strong("Make sure Data is uploaded and Columns are selected before running the model."))))
+    }
+    div(
+      actionGroupButtons(
+        c("go", "clear_button"),
+        c("Plot!", "Clear Data"),
+        status = "default",
+        size = "lg",
+        direction = "vertical",
+      ),
+    )
+  })
   
   output$colSelection <- renderUI({
     pickerInput(
@@ -275,11 +289,12 @@ mod1_server <- function(input, output, session) {
     fluidRow(
       column(10, offset=2,
             div(
-              h3("Add any comments/descriptions for plots to be included in the report in the respective tex boxes."),
-              textAreaInput("pair_desc", "Pair Plot", rows = 2),
-              textAreaInput("pca_desc", "PCA Plot", rows = 2),
-              textAreaInput("tree_desc", "Tree Plot", rows = 2),
-              textAreaInput("rule_desc", "PCA Plot", rows = 2)              
+              h3("Add any comments/descriptions for plots to be included in the report in the respective text boxes."),
+              textAreaInput("pair_desc", "Pair Plot", rows = 2,width = '100%' , placeholder = 'Add comments for plots here'),
+              textAreaInput("pca_desc", "PCA Plot", rows = 2,width = '100%' , placeholder = 'Add comments for plots here'),
+              textAreaInput("tree_desc", "Tree Plot", rows = 2, width = '100%', placeholder = 'Add comments for plots here'),
+              textAreaInput("rule_desc", "PCA Plot", rows = 2 ,width = '100%', placeholder = 'Add comments for plots here'),
+              downloadButton("report", "Generate report")
               
               )
       )
