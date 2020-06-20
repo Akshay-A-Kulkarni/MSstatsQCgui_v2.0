@@ -5,10 +5,7 @@ output:
   prettydoc::html_pretty:
     theme: cayman
 params:
-  pair_plot: NA
-  plotly_fig: NA
-  tree_plot: NA
-  rule_table: NA
+  box_plots: NA
   
 ---
 
@@ -36,32 +33,36 @@ We can also embed plots:
 
 ### Pair Plot
 ```{r, echo=FALSE}
-params$pair_plot
+require(plotly)
+for (p in params$box_plots) {
+  plot(p)
+}
+
 ```
 
 ### 3D PCA
 ```{r, echo=FALSE}
-params$plotly_fig
+# params$plotly_fig
 ```
 
 ### Tree
 ```{r, echo=FALSE}
-visTree(params$tree_plot, main = "Anomaly Classification Tree", width = "100%")
+# visTree(params$tree_plot, main = "Anomaly Classification Tree", width = "100%")
 ```
 
 ### Rule Table
 
 ```{r echo=FALSE}
-DT::datatable({params$rule_table}
-  ,escape = F
-  ,fillContainer = T
-  ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,scrollY = FALSE,
-                  rowCallback = DT::JS(sprintf('function(row, data) {
-                                          if (String(data[%s]).trim() == "Anomaly"  ){
-                                                  $("td", row).css("background", "#994141");
-                                                  $("td", row).css("color", "white");}}',toString(1)))
-  )
-  )
+# DT::datatable({params$rule_table}
+#   ,escape = F
+#   ,fillContainer = T
+#   ,options = list(lengthMenu = c(25, 50, 100), pageLength = 25,scrollY = FALSE,
+#                   rowCallback = DT::JS(sprintf('function(row, data) {
+#                                           if (String(data[%s]).trim() == "Anomaly"  ){
+#                                                   $("td", row).css("background", "#994141");
+#                                                   $("td", row).css("color", "white");}}',toString(1)))
+#   )
+#   )
 
 ```
 

@@ -48,18 +48,24 @@ mod2_ui <-  fluidPage(style='padding-top: 6%', bsplus::use_bs_accordion_sidebar(
                                       plotresults_ui,
                                     
                                       ######################################################
+                                      br(),br(),
+                                      divider("Report","file",1),
                                     
                                       # Report
                                       fluidRow(
-                                        column(10, offset=2,
-                                               div(
-                                                 h3("Add any comments/descriptions for plots to be included in the report in the respective tex boxes."),
-                                                 textAreaInput("pair_desc", "Plot Description", rows = 2,cols = 4, placeholder = 'Add comments for plots here'),
-                                                 downloadButton("report2", "Generate report")
-                                                 
+                                        column(10, offset=1,
+                                               fluidRow(
+                                                 div(
+                                                   h4(strong("Add any comments/descriptions for plots to be included in the report in the respective text boxes.")),
+                                                   column(4,textAreaInput("input_data_desc", "Data/Table Comments", rows = 2,cols = 4, placeholder = 'Add comments here')),
+                                                   column(4,textAreaInput("boxplot_desc", "BoxPlot Comments", rows = 2,cols = 4, placeholder = 'Add comments here')),
+                                                   column(4,textAreaInput("HeatMap", "SPC/ML Heatmap Comments", rows = 2,cols = 4, placeholder = 'Add comments here')),
+                                                   downloadButton("mod2report", "Generate report")
+                                                 )
                                                )
                                         )
                                       ),
+                                      br(),br(),
                                       # Footer
                                       ######################################################
                                       footer

@@ -3,13 +3,22 @@ mod2_server <- function(input, output, session) {
 
   
   observeEvent(input$switch_home, {
+    shinyjs::click("clear_button", asis = FALSE)
     if (!is_page("home")) {
       change_page("/")}
   })
+
+  errorStatus <- tryCatch({
+    h2o.init(startH2O = FALSE)
+  }, error = function(err) {
+    errorStatus <- err[1]$message
+    message(paste0(errorStatus,"\n Initializing new H2O cluster..."))
+    # Inititialize H2o cluster
+    try({h2o.shutdown(prompt = FALSE)}, silent=TRUE)
+    h2o.init(ip = 'localhost', nthreads= -1)
+    return(errorStatus)
+  }) # END tryCatch
   
-  hideTab(inputId = "module2-results", target = "spc1" )
-  hideTab(inputId = "module2-results", target = "spc2")
-  hideTab(inputId = "module2-results", target = "ml1")
   
   ############################ MSstatsQCgui  ###########################
   data <- reactiveValues(df = NULL, 
@@ -20,9 +29,10 @@ mod2_server <- function(input, output, session) {
                          anno = NULL,
                          metrics = NULL, 
                          L = NULL, 
-                         U = NULL)
+                         U = NULL,
+                         run=0)
   
-  observeEvent(input$filein, {
+  observeEvent(input$filein, { 
     file1 <- input$filein
     data$mod2_upload_msg1 <- file1$name
     data$guide <- input_checking(read.csv(file=file1$datapath, sep=",", header=TRUE, stringsAsFactors=TRUE))
@@ -126,6 +136,7 @@ mod2_server <- function(input, output, session) {
     data$U <- NULL
     data$mod2_upload_msg1 ="Upload Data or Try the Example"
     data$mod2_upload_msg2 ="Upload Data or Try the Example"
+    run=0
   }, priority = 40)
   
   
@@ -460,6 +471,8 @@ mod2_server <- function(input, output, session) {
       guide_box_plots <- peptide_box.plot(guideset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
       test_box_plots <-  peptide_box.plot(testset, data.peptides = boxplot_peps, data.metrics = input$user_selected_metrics, ret_obj_list = T)
       
+      data$box_plots <- guide_box_plots
+      
       # Insert plot output objects the list
       plot_output_list <- lapply(1:input_n, function(i) {
         plotname <- paste("boxplot", i, sep="")
@@ -470,6 +483,7 @@ mod2_server <- function(input, output, session) {
       })
 
       do.call(tagList, plot_output_list) # needed to display properly.
+      
 
       return(plot_output_list)
     }
@@ -574,7 +588,10 @@ mod2_server <- function(input, output, session) {
   
   
   ############################# ml-heat_map in Summary tab #############################################
-
+  
+  observeEvent(input$run_method, {
+    data$run <- data$run + 1
+  }) 
 
   output$ml_heat_map <- renderUI({
     guide.set <- data$guide
@@ -588,8 +605,8 @@ mod2_server <- function(input, output, session) {
       need(!is.null(input$user_selected_metrics),"Please first select metrics and create a decision rule")
     )
     
-    # Take a dependency on input$run_method
-    input$run_method
+    # Take a dependency
+    data$run
     # Use isolate() to avoid dependency on all other controls
     user_sim_bool <- isolate(input$use_sim_button)
     user_sim_size <- isolate(input$sim_size)
@@ -597,9 +614,9 @@ mod2_server <- function(input, output, session) {
     
     
     
-    if (input$run_method == 0) { return() } 
+    if (data$run == 0) { return() } 
   
-    else if(input$run_method != 0 && method == "MSstatsQC-ML"){
+    else if(data$run != 0 && method == "MSstatsQC-ML"){
       
     
     showNotification(type="warning", duration=10,
@@ -643,6 +660,37 @@ mod2_server <- function(input, output, session) {
       return()
     }
   
+  })
+  
+  output$mod2report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    filename = "MSStatsQC-Mod2Report.html",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions.
+      
+      tempReport <- file.path(tempdir(), "MSStatsQC-Mod2Report.Rmd")
+      file.copy("MSStatsQC-Mod2Report.Rmd", tempReport, overwrite = TRUE)
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(
+        box_plots = data$box_plots
+      )
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+  
+
+  # Shut down H2O cluster on app exit
+  onStop(function() {
+    try({h2o.shutdown(prompt = FALSE)}, silent=TRUE)
   })
   
   session$onSessionEnded(function() {

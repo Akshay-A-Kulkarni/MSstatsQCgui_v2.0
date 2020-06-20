@@ -47,27 +47,26 @@ methods_ui <-  fluidRow(
                            condition = "input.use_sim_button && input.method_selection == 'MSstatsQC-ML'",
                            span('Using Simulation to generate more failing runs'),
                            numericInput(label = "Simuation size", inputId="sim_size", value = 100)
-                         )
+                         ),
+                         conditionalPanel(
+                           condition = "input.method_selection == 'MSstatsQC-ML' && !input.use_sim_button",
+                           span('Upload a data set with labeled failing runs for Model training.'),
+                           fileInput("anno_in", label= strong("Annotated Data"), accept = c(".csv"), placeholder = "Upload labeled failing runs")
+                         ),
                      )
                   )
                  ),
                  column(4,
                         wellPanel(
-                        #   p("Configure Previous Settings and Press the button below to generate results !"),
+                          p("Configure Previous Settings and Press the button below to generate results !"),
                         #   prettySwitch(
                         #     inputId = "use_anno_button",
                         #     label = "Use user annotations", 
                         #     status = "success",
                         #     fill = TRUE
                         #   ),
-                          conditionalPanel(
-                            condition = "input.method_selection == 'MSstatsQC-ML' && !input.use_sim_button",
-                            span('Upload a data set with labeled failing runs for Model training.'),
-                            fileInput("anno_in", label= p(strong("Annotated Data")), accept = c(".csv"), placeholder = "Upload labeled failing runs")
-                          ),
                           br(),
                           actionButton(inputId ="run_method", label = "Generate Plots")
-                        
                         )
                    
                  )

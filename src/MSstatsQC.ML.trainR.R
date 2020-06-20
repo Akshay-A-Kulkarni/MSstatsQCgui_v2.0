@@ -45,7 +45,7 @@ MSstatsQC.ML.trainR<- function(guide.set, use_simulation, sim.size, address="", 
   
   ## Appending all simulations
     if (is.null(dim(guide.set.annotations))==TRUE){
-      d<-rbind(d1,d2,d3, d4,d5,d6)
+      d<-rbind(d1,d2,d3,d4,d5,d6)
     }
   
     else{
@@ -54,14 +54,27 @@ MSstatsQC.ML.trainR<- function(guide.set, use_simulation, sim.size, address="", 
     }
   }
   else{
-    full_df <- rbind(guide.set, guide.set.annotations)
-    full_df <- full_df %>% mutate(Annotations = if_else(Annotations != 'FAIL', 'PASS', 'FAIL'))
 
-    RESPONSE <- full_df$Annotations 
-    
-    full_feature_df <- add_features(full_df[,4:ncol(full_df)])
-    full_feature_df <- full_feature_df[,order(names(full_feature_df))]
-    full_feature_df <- cbind(full_feature_df,RESPONSE)
+    # RESPONSE <- guide.set$Annotations
+    # guide_feature_df <- add_features(guide.set[,4:ncol(guide.set)])
+    # guide_feature_df <- guide_feature_df[,order(names(guide_feature_df))]
+    # guide_feature_df <- cbind(guide_feature_df,RESPONSE)
+    # 
+    # 
+    # guide.set.annotations <-  guide.set.annotations %>%  dplyr::filter(guide.set.annotations$Annotations == 'FAIL')
+    # 
+    # anno_feature_df <- QcClassifier_data_annotated(guide.set, guide.set.annotations)
+    # 
+    # 
+    # full_feature_df <- rbind(guide_feature_df, anno_feature_df)
+
+
+    df <- rbind(guide.set,guide.set.annotations)
+
+    RESPONSE <- df$Annotations
+
+
+    full_feature_df <-  cbind(df[4:ncol(df)], RESPONSE)
 
 
     d <-  full_feature_df
@@ -78,7 +91,7 @@ MSstatsQC.ML.trainR<- function(guide.set, use_simulation, sim.size, address="", 
   validation <- d[-train_ind,]
   
   #launch h2o cluster
-  localH2O <- h2o.init(nthreads = -1)
+  # localH2O <- h2o.init(nthreads = -1)
   
   #import r objects to h2o cloud
   train_h2o <- as.h2o(train)

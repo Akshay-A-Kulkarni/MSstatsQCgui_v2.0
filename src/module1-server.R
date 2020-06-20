@@ -7,6 +7,7 @@ mod1_server <- function(input, output, session) {
       change_page("/")}
   })
   
+  
   data <- reactiveValues(
                     df = NULL,
                     cols=NULL, 
@@ -75,6 +76,7 @@ mod1_server <- function(input, output, session) {
     data$plot <- NULL
     data$mod1_uploadmsg <- "Upload Data or Try the Example"
     data$selected_cols <- NULL
+    data$cols <- NULL
     data$pairplot <-  NULL 
     data$plot <-  NULL
     data$cf <-  NULL 
@@ -109,7 +111,6 @@ mod1_server <- function(input, output, session) {
         c("go", "clear_button"),
         c("Plot!", "Clear Data"),
         status = "default",
-        size = "lg",
         direction = "vertical",
       ),
     )
@@ -218,10 +219,11 @@ mod1_server <- function(input, output, session) {
   
   train_isoforest_anomaly_plot <- function(df_input){
     
+    df_input <-  df_input %>% select_if(~ !any(is.na(.)))
     #Initialising IF model
     model <- isolationForest$new(
       num_trees = 100,
-      sample_size = base::round(nrow(df_input)*0.05 + 2),
+      sample_size = base::round(nrow(df_input)*0.10 + 2),
       replace = T,
       mtry = base::ceiling(sqrt(length(df_input))),
       seed = 12345
@@ -244,15 +246,18 @@ mod1_server <- function(input, output, session) {
     }
     
     thresh<-median(boot_result)
-
-    # Getting Principal Components
+    #Removing cols with non numeric vals
     pca_input <- dplyr::select_if(df_input, is.numeric)
+    #Removing cols with constant variance
+    pca_input <- pca_input[ , which(apply(pca_input, 2, var) != 0)]
     
     if(length(pca_input) != length(df_input)){
       showNotification(type="warning", duration=10,
-        "Note: The Selected columns seem to contain non-numeric type. Such columns will not be used for computation on PCA plots ")
+        div(p("Note: The Selected columns seem to contain non-numeric types or columns with constant VAR. Such columns will not be used for computation on PCA plots "))
+        )
     }
     
+    # Getting Principal Component
     pca <- prcomp(pca_input, scale. = T , center = T)
     pcainfo <-  summary(pca)
 
