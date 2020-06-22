@@ -112,7 +112,7 @@ home_page <- fluidPage(theme = 'cosmo.min.css',
                                         background-color:#FFF;
                                         z-index:1000;" ,
                                  fluidPage(style="width:80%;font-family:Open Sans;",
-                                           column(6,div(style="padding-top:1.5%; display:flex",img(src="logo.png", width="50px"),div(style="padding-left:2%",h3((""),style='color:DarkBlue; font-weight:500;')))),
+                                           column(6,div(style="padding-top:1.5%; display:flex",img(src="logo.png",height='70px',width='50px'),div(style="padding-left:2%",h3((""),style='color:DarkBlue; font-weight:500;')))),
                                            column(6,align='right',
                                             div(style="padding-top:3.5%; display:inline-block",
                                             actionBttn(
