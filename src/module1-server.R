@@ -107,12 +107,14 @@ mod1_server <- function(input, output, session) {
       return(div(p(strong("Make sure Data is uploaded and Columns are selected before running the model."))))
     }
     div(
-      actionGroupButtons(
-        c("go", "clear_button"),
-        c("Plot!", "Clear Data"),
-        status = "default",
-        direction = "vertical",
-      ),
+      p(style="margin:0 0 5px",strong("Controls: ")),
+      div(style='width=100%',
+        actionButton(inputId = "go", label = "Run Model/Plot", width = '100%')
+        ),
+      br(),
+      div(  
+        actionButton(inputId = "clear_button", label = "Reset/Clear All", width = '100%')
+      )
     )
   })
   
@@ -150,7 +152,11 @@ mod1_server <- function(input, output, session) {
       col <- if_else(data_in$Predicted_Label == "Anomaly", "red", "blue" )
       }
     
-    data$pairplot <- pairs(data_in[input$user_selected_columns], pch=pch, col=col)
+    if (length(input$user_selected_columns) > 8) {
+      pair_plot_cols <-  head(input$user_selected_columns,8)
+    }
+    
+    data$pairplot <- pairs(data_in[pair_plot_cols], pch=pch, col=col)
     data$pairplot
   })
   

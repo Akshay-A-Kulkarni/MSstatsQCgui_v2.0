@@ -32,7 +32,7 @@ mod1_ui <-fluidPage(style='padding-top: 8%;',
                                   column(3,div(uiOutput("mod1_upload_component"), fluidRow(column(6,actionButton("mod1_example", "Load Example Data")),column(6,p("Upload your data in *.csv format"))))),
                                   column(4,div(uiOutput("colSelection"))),
                                   column(3,div(numericInput("cf", "Contamination Factor [0 ≤ CF ≤ 1]:",min = 0, max = 1,value = 0.05))),
-                                  column(1,uiOutput('init_buttons'))
+                                  column(2,uiOutput('init_buttons'))
                                   
                                 )),   
                                 br(),br(),br(),br(),
